@@ -1300,7 +1300,7 @@
                 <div id="loginHelp" style="margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 5px; font-size: 0.85rem;">
                     <strong>Demo Accounts:</strong><br>
                     <strong>Members:</strong> demo@demo/demo123, lisa@demo123/demo123<br>
-                    <strong>Admin:</strong> CCET_Admin/CCET2018Toastmasters!
+                    <strong>Admin:</strong> Contact administrators for credentials
                 </div>
             </div>
         </section>
@@ -1650,7 +1650,7 @@
                 description.textContent = 'Admin access required. Login with administrator credentials.';
                 description.style.color = '#d32f2f';
                 loginButton.style.background = '#d32f2f';
-                loginHelp.innerHTML = '<strong>Admin Account:</strong><br>Username: CCET_Admin<br>Password: CCET2018Toastmasters!';
+                loginHelp.innerHTML = '<strong>Admin Account:</strong><br>Username: CCET_Admin<br>Contact administrators for credentials';
                 loginHelp.style.background = '#ffebee';
             } else {
                 title.textContent = 'Member Login';
@@ -1658,7 +1658,7 @@
                 description.textContent = 'Login to access member features and sign up for roles.';
                 description.style.color = '#666';
                 loginButton.style.background = '#1976d2';
-                loginHelp.innerHTML = '<strong>Demo Accounts:</strong><br><strong>Members:</strong> demo/demo, lisa/demo123<br><strong>Admin:</strong> CCET_Admin/CCET2018Toastmasters!';
+                loginHelp.innerHTML = '<strong>Demo Accounts:</strong><br><strong>Members:</strong> demo/demo, lisa/demo123<br><strong>Admin:</strong> Contact administrators for credentials';
                 loginHelp.style.background = '#f8f9fa';
             }
         }
@@ -1682,7 +1682,7 @@
                 
                 // Check if admin login is required
                 if (isAdminLogin && !user.isAdmin) {
-                    alert('Access denied. This account does not have administrator privileges.\n\nUse: CCET_Admin / CCET2018Toastmasters!');
+                    alert('Access denied. This account does not have administrator privileges.\n\nUse: Contact administrators for credentials');
                     apiClient.logout();
                     return;
                 }
@@ -1714,9 +1714,9 @@
             } catch (error) {
                 console.error('Login error:', error);
                 if (isAdminLogin) {
-                    alert('Invalid admin credentials.\n\nAdmin Account:\nUsername: CCET_Admin\nPassword: CCET2018Toastmasters!');
+                    alert('Invalid admin credentials.\n\nAdmin Account:\nUsername: CCET_Admin\nContact administrators for password');
                 } else {
-                    alert('Invalid username or password.\n\nDemo Accounts:\nMembers: demo/demo, lisa/demo123\nAdmin: CCET_Admin/CCET2018Toastmasters!');
+                    alert('Invalid username or password.\n\nDemo Accounts:\nMembers: demo/demo, lisa/demo123\nAdmin: Contact administrators for credentials');
                 }
             } finally {
                 loginButton.disabled = false;
