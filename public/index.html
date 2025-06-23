@@ -1820,7 +1820,12 @@
                 populateAdminMeetingSelector();
                 populateDashboardMeetingSelector();
                 
-                const nextMeetingId = Object.keys(meetings).sort()[0];
+                // Find the next upcoming meeting
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const nextMeetingId = Object.keys(meetings)
+                    .filter(id => new Date(meetings[id].date + 'T00:00:00') >= today)
+                    .sort((a, b) => new Date(meetings[a].date) - new Date(meetings[b].date))[0];
                 if (nextMeetingId) {
                     selectedMeetingId = nextMeetingId;
                     const select = document.getElementById('meetingSelect');
