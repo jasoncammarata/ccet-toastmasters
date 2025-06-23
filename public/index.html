@@ -1,0 +1,3093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crystal City Evening Toastmasters</title>
+    <style>
+        /* All your existing styles remain exactly the same */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Loading spinner */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0,0,0,.1);
+            border-radius: 50%;
+            border-top-color: #1976d2;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-container {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        /* Header */
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .logo {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+
+        .tagline {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .auth-section {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .auth-section button {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .auth-section button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+
+        .user-welcome {
+            color: #ffd700;
+            font-weight: 500;
+        }
+
+        /* Navigation */
+        nav {
+            background: #fff;
+            padding: 1rem 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+            align-items: center;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nav-links li {
+            display: inline-block;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-links.primary {
+            justify-content: center;
+        }
+
+        .nav-links.secondary {
+            justify-content: center;
+            gap: 1.5rem;
+            padding-top: 0.75rem;
+            margin-top: 0.75rem;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .nav-links a:hover, .nav-links a.active {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .nav-links.secondary a {
+            font-size: 0.95rem;
+        }
+
+        .nav-links.secondary a#nav-roles {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .nav-links.secondary a#nav-roles:hover, .nav-links.secondary a#nav-roles.active {
+            background: #c8e6c9;
+            color: #1b5e20;
+        }
+
+        .nav-links.secondary a#nav-admin-dashboard {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .nav-links.secondary a#nav-admin-dashboard:hover, .nav-links.secondary a#nav-admin-dashboard.active {
+            background: #ffe0b2;
+            color: #bf360c;
+        }
+
+        /* Main Content */
+        main {
+            padding: 2rem 0;
+        }
+
+        .content-section {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 3rem 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+        }
+
+        .hero h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Meeting Agenda Styles */
+        .meeting-selector {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .meeting-selector select {
+            padding: 12px 20px;
+            border: 2px solid #1976d2;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            margin: 0 10px;
+            min-width: 200px;
+        }
+
+        .meeting-selector select:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(25,118,210,0.2);
+        }
+
+        .meeting-type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .in-person {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+
+        .virtual {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .agenda-section {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+
+        .agenda-header {
+            background: linear-gradient(135deg, #1976d2, #1565c0);
+            color: white;
+            padding: 1rem;
+            font-weight: bold;
+            text-align: center;
+            font-size: 1.2rem;
+        }
+
+        .agenda-content {
+            padding: 2rem;
+        }
+
+        .agenda-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 1.1rem;
+        }
+
+        .agenda-line:last-child {
+            border-bottom: none;
+        }
+
+        .agenda-line.section-header {
+            font-weight: bold;
+            color: #1976d2;
+            border-bottom: 2px solid #1976d2;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            justify-content: flex-start;
+        }
+
+        .agenda-role {
+            font-weight: 600;
+            color: #333;
+            flex: 1;
+            margin-right: 20px;
+        }
+
+        .agenda-assignment {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        .assignment-name {
+            color: #2e7d32;
+            font-weight: 500;
+        }
+
+        .assignment-title {
+            color: #1976d2;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .assignment-project {
+            color: #666;
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
+        .assignment-empty {
+            color: #999;
+            font-style: italic;
+        }
+
+        .signup-button {
+            background: #ff9800;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .signup-button:hover {
+            background: #f57c00;
+        }
+
+        .signup-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .remove-button {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+        .remove-button:hover {
+            background: #d32f2f;
+        }
+
+        .admin-edit-button {
+            background: #9c27b0;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+        .admin-edit-button:hover {
+            background: #7b1fa2;
+        }
+
+        .roles-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .role-card {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            border-left: 4px solid #1976d2;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .role-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .role-card h3 {
+            color: #1976d2;
+            margin-bottom: 0.5rem;
+        }
+
+        .role-assignment {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        .role-assignment button {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .role-assignment button:hover {
+            background: #45a049;
+        }
+
+        .role-assignment button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .assigned {
+            color: #4caf50;
+            font-weight: 500;
+        }
+
+        /* Map links styling */
+        .map-links {
+            display: flex;
+            gap: 10px;
+            margin-top: 0.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .map-link {
+            display: inline-block;
+            background: #1976d2;
+            color: white;
+            padding: 6px 12px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 0.85rem;
+            transition: background 0.3s ease;
+        }
+
+        .map-link:hover {
+            background: #1565c0;
+            color: white;
+        }
+
+        .map-link.apple {
+            background: #000;
+        }
+
+        .map-link.apple:hover {
+            background: #333;
+        }
+
+        /* Login Form */
+        .login-form {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #1976d2;
+            box-shadow: 0 0 0 2px rgba(25,118,210,0.2);
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: #1565c0;
+        }
+
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Speech title input modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .modal h3 {
+            margin-bottom: 1rem;
+            color: #1976d2;
+        }
+
+        .modal .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-buttons button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .modal-buttons .confirm {
+            background: #4caf50;
+            color: white;
+        }
+
+        .modal-buttons .cancel {
+            background: #ccc;
+            color: #333;
+        }
+
+        /* Education Resources */
+        .resources-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .resource-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .resource-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .resource-header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 1rem;
+        }
+
+        .resource-content {
+            padding: 1.5rem;
+        }
+
+        .resource-content h4 {
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+
+        .resource-content p {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .resource-link {
+            display: inline-block;
+            background: #1976d2;
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+
+        .resource-link:hover {
+            background: #1565c0;
+        }
+
+        /* Admin Portal Styles */
+        .member-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .member-card:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .member-info {
+            flex: 1;
+        }
+
+        .member-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.25rem;
+        }
+
+        .member-details {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .member-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .approve-button {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.3s ease;
+        }
+
+        .approve-button:hover {
+            background: #45a049;
+        }
+
+        .reject-button, .remove-button-admin {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.3s ease;
+        }
+
+        .reject-button:hover, .remove-button-admin:hover {
+            background: #d32f2f;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            margin-left: 8px;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-admin {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        /* Email roster styles */
+        .email-roster {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+
+        .email-list {
+            background: white;
+            padding: 1rem;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-family: monospace;
+            font-size: 0.9rem;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .copy-button {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        .copy-button:hover {
+            background: #45a049;
+        }
+
+        /* Dashboard section styling */
+        .dashboard-section {
+            margin-bottom: 2rem;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .dashboard-section-header {
+            background: linear-gradient(135deg, #1976d2, #1565c0);
+            color: white;
+            padding: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .dashboard-section-header:hover {
+            background: linear-gradient(135deg, #1565c0, #0d47a1);
+        }
+
+        .dashboard-section-content {
+            padding: 2rem;
+            background: white;
+        }
+
+        /* Footer */
+        footer {
+            background: #333;
+            color: white;
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: 3rem;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-section h4 {
+            margin-bottom: 1rem;
+            color: #ffd700;
+        }
+
+        .footer-section p, .footer-section li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section a {
+            color: #ccc;
+            text-decoration: none;
+        }
+
+        .footer-section a:hover {
+            color: #ffd700;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .nav-container {
+                gap: 0;
+            }
+
+            .nav-links {
+                justify-content: center;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+
+            .nav-links.primary {
+                gap: 0.5rem;
+            }
+
+            .nav-links.secondary {
+                border-top: 1px solid #e0e0e0;
+                padding-top: 0.5rem;
+                margin-top: 0.5rem;
+                gap: 0.5rem;
+            }
+
+            .nav-links a {
+                padding: 0.4rem 0.8rem;
+                font-size: 0.9rem;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .roles-grid, .resources-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .agenda-line {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+
+            .agenda-assignment {
+                justify-content: flex-start;
+            }
+
+            .map-links {
+                justify-content: flex-start;
+            }
+
+            .modal-content {
+                margin: 10% auto;
+                width: 95%;
+            }
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .content-section.active {
+            animation: fadeInUp 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div>
+                    <div class="logo">Crystal City Evening Toastmasters</div>
+                    <div class="tagline">Where Leaders Are Made</div>
+                </div>
+                <div class="auth-section" id="authSection">
+                    <button onclick="showLogin()">Member Login</button>
+                    <button onclick="showAdminLogin()">Admin Login</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav>
+        <div class="container">
+            <div class="nav-container">
+                <ul class="nav-links primary">
+                    <li><a onclick="showSection('home')" class="active" id="nav-home">Home</a></li>
+                    <li><a onclick="showSection('agenda')" id="nav-agenda">Future Meeting Agendas</a></li>
+                    <li><a onclick="showSection('education')" id="nav-education">Education</a></li>
+                    <li><a onclick="showSection('resources')" id="nav-resources">Resources</a></li>
+                    <li><a onclick="showSection('about')" id="nav-about">About Us</a></li>
+                    <li><a onclick="showSection('contact')" id="nav-contact">Contact</a></li>
+                </ul>
+                <ul class="nav-links secondary" id="secondaryNav" style="display: none;">
+                    <li style="display: none;" id="roles-nav-item"><a onclick="showSection('roles')" id="nav-roles">Meeting Roles</a></li>
+                    <li style="display: none;" id="admin-nav-item"><a onclick="showSection('admin')" id="nav-admin">Admin Portal</a></li>
+                    <li style="display: none;" id="admin-dashboard-nav-item"><a onclick="showSection('admin-dashboard')" id="nav-admin-dashboard">Admin Dashboard</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Speech Title Modal -->
+    <div id="speechModal" class="modal">
+        <div class="modal-content">
+            <h3>🎤 Speech Sign-up</h3>
+            <div class="form-group">
+                <label for="speechTitle">Speech Title: *</label>
+                <input type="text" id="speechTitle" placeholder="Enter your speech title" required>
+            </div>
+            <div class="form-group">
+                <label for="speechProject">Project/Manual:</label>
+                <input type="text" id="speechProject" placeholder="e.g., Pathways Level 2, CC Manual #3">
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel" onclick="closeSpeechModal()">Cancel</button>
+                <button class="confirm" onclick="confirmSpeechSignup()">Sign Up</button>
+            </div>
+        </div>
+    </div>
+
+    <main class="container">
+        <!-- All sections remain the same as original HTML -->
+        <!-- Home Section -->
+        <section id="home" class="content-section active">
+            <div class="hero">
+                <h1>Welcome to Crystal City Evening Toastmasters</h1>
+                <p>Join us on the 1st and 3rd Tuesday of every month to develop your communication and leadership skills in a supportive, fun environment. Whether you're a beginner or experienced speaker, we help you achieve your goals.</p>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                <div class="role-card">
+                    <h3>🎤 Communication Skills</h3>
+                    <p>Develop confidence in public speaking through structured speeches and impromptu speaking opportunities.</p>
+                </div>
+                <div class="role-card">
+                    <h3>👑 Leadership Development</h3>
+                    <p>Take on meeting roles and leadership positions to build essential management and organizational skills.</p>
+                </div>
+                <div class="role-card">
+                    <h3>🌟 Supportive Environment</h3>
+                    <p>Learn and grow in a friendly, encouraging atmosphere where every member supports each other's success.</p>
+                </div>
+            </div>
+
+            <div style="margin-top: 2rem; text-align: center;">
+                <h2>Meeting Information</h2>
+                <div class="role-card" style="max-width: 600px; margin: 1rem auto;">
+                    <h3>📅 When & Where</h3>
+                    <p><strong>1st & 3rd Tuesday of Each Month</strong><br>
+                    7:00 PM - 8:30 PM</p>
+                    <p><strong>1st Tuesday:</strong> In-person meeting location:<br>
+                    Crystal City Community Center<br>
+                    1234 Jefferson Davis Highway, Arlington, VA 22202</p>
+                    <div class="map-links">
+                        <a href="https://maps.apple.com/?q=1234+Jefferson+Davis+Highway+Arlington+VA+22202" target="_blank" class="map-link apple">📍 Apple Maps</a>
+                        <a href="https://www.google.com/maps/dir/?api=1&destination=1234+Jefferson+Davis+Highway+Arlington+VA+22202" target="_blank" class="map-link">🗺️ Google Maps</a>
+                    </div>
+                    <p style="margin-top: 1rem;"><strong>3rd Tuesday:</strong> Virtual meeting via Zoom<br>
+                    <em>Meeting link sent to members and visitors by request</em></p>
+                    <p>Visitors are always welcome! Contact us for more information.</p>
+                    <div style="margin-top: 1rem;">
+                        <button onclick="showSection('agenda')" class="btn-primary" style="width: auto; padding: 12px 24px;">
+                            View Future Meeting Agendas
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Portal Section -->
+        <section id="admin" class="content-section">
+            <h2>🔐 Admin Portal</h2>
+            <p>Manage club members, review applications, and oversee club administration.</p>
+            
+            <div class="roles-grid">
+                <div class="role-card">
+                    <h3>📋 Member Management</h3>
+                    <p>Review pending applications and manage current member status.</p>
+                    <div style="margin-top: 1rem;">
+                        <button onclick="showMemberManagement()" class="btn-primary" style="width: auto; padding: 8px 16px;">
+                            Manage Members
+                        </button>
+                    </div>
+                </div>
+
+                <div class="role-card">
+                    <h3>📧 Email Roster</h3>
+                    <p>Generate and copy email list of all active members.</p>
+                    <div style="margin-top: 1rem;">
+                        <button onclick="showEmailRoster()" class="btn-primary" style="width: auto; padding: 8px 16px;">
+                            View Email Roster
+                        </button>
+                    </div>
+                </div>
+
+                <div class="role-card">
+                    <h3>📅 Edit Meeting Agendas</h3>
+                    <p>Modify speaker assignments and roles for any meeting date.</p>
+                    <div style="margin-top: 1rem;">
+                        <button onclick="showAgendaEditor()" class="btn-primary" style="width: auto; padding: 8px 16px;">
+                            Edit Agendas
+                        </button>
+                    </div>
+                </div>
+
+                <div class="role-card">
+                    <h3>📊 Meeting Analytics</h3>
+                    <p>View meeting attendance, role assignments, and participation statistics.</p>
+                    <div style="margin-top: 1rem;">
+                        <button onclick="alert('Feature coming soon!')" class="btn-primary" style="width: auto; padding: 8px 16px;">
+                            View Analytics
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Member Management Interface -->
+            <div id="memberManagementPanel" style="display: none; margin-top: 2rem;">
+                <div class="agenda-section">
+                    <div class="agenda-header">
+                        Member Management Dashboard
+                    </div>
+                    <div class="agenda-content" id="memberManagementContent">
+                        <div class="loading-container">
+                            <div class="loading"></div>
+                            <p>Loading member data...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Roster Panel -->
+            <div id="emailRosterPanel" style="display: none; margin-top: 2rem;">
+                <div class="agenda-section">
+                    <div class="agenda-header">
+                        📧 Member Email Roster
+                    </div>
+                    <div class="agenda-content">
+                        <p style="margin-bottom: 1rem;">Copy the email list below to use in your email client:</p>
+                        <div class="email-roster">
+                            <div class="email-list" id="emailRosterList">
+                                <div class="loading-container">
+                                    <div class="loading"></div>
+                                    <p>Loading email roster...</p>
+                                </div>
+                            </div>
+                            <button onclick="copyEmailRoster()" class="copy-button">Copy All Emails</button>
+                        </div>
+                        <div style="text-align: center; margin-top: 1rem;">
+                            <button onclick="hideEmailRoster()" class="btn-primary" style="width: auto; padding: 8px 16px; background: #666;">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agenda Editor Panel -->
+            <div id="agendaEditorPanel" style="display: none; margin-top: 2rem;">
+                <div class="agenda-section">
+                    <div class="agenda-header">
+                        📅 Agenda Editor
+                    </div>
+                    <div class="agenda-content">
+                        <div style="text-align: center; margin-bottom: 2rem;">
+                            <h3>Select Meeting to Edit:</h3>
+                            <select id="adminMeetingSelect" onchange="loadAdminAgenda()" style="padding: 12px 20px; border: 2px solid #1976d2; border-radius: 8px; font-size: 1rem; margin: 10px;">
+                                <option value="">Loading meetings...</option>
+                            </select>
+                        </div>
+                        
+                        <div id="adminAgendaDisplay">
+                            <p style="text-align: center; color: #666;">Select a meeting to edit its agenda.</p>
+                        </div>
+
+                        <div style="text-align: center; margin-top: 2rem;">
+                            <button onclick="hideAgendaEditor()" class="btn-primary" style="width: auto; padding: 8px 16px; background: #666;">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Admin Dashboard Section -->
+        <section id="admin-dashboard" class="content-section">
+            <h2>🛠️ Admin Dashboard</h2>
+            <p style="margin-bottom: 2rem;">Complete administrative control panel for Crystal City Evening Toastmasters.</p>
+            
+            <!-- Quick Actions -->
+            <div class="roles-grid" style="margin-bottom: 3rem;">
+                <div class="role-card">
+                    <h3>📧 Email Roster</h3>
+                    <p>Generate and manage member email lists for communications.</p>
+                    <div style="margin-top: 1rem;">
+                        <button onclick="toggleEmailRosterSection()" class="btn-primary" style="width: auto; padding: 8px 16px;">
+                            Manage Email Roster
+                        </button>
+                    </div>
+                </div>
+
+                <div class="role-card">
+                    <h3>👥 Member Management</h3>
+                    <p>Add, remove, and manage all club members.</p>
+                    <div style="margin-top: 1rem;">
+                        <button onclick="toggleMemberSection()" class="btn-primary" style="width: auto; padding: 8px 16px;">
+                            Manage Members
+                        </button>
+                    </div>
+                </div>
+
+                <div class="role-card">
+                    <h3>📅 Agenda Editor</h3>
+                    <p>Edit meeting agendas and speaker assignments.</p>
+                    <div style="margin-top: 1rem;">
+                        <button onclick="toggleAgendaSection()" class="btn-primary" style="width: auto; padding: 8px 16px;">
+                            Edit Agendas
+                        </button>
+                    </div>
+                </div>
+
+                <div class="role-card">
+                    <h3>📊 Club Analytics</h3>
+                    <p>View reports and member participation statistics.</p>
+                    <div style="margin-top: 1rem;">
+                        <button onclick="alert('Analytics feature coming soon!')" class="btn-primary" style="width: auto; padding: 8px 16px;">
+                            View Analytics
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Email Roster Section -->
+            <div id="emailRosterSection" style="display: none;">
+                <div class="agenda-section">
+                    <div class="agenda-header">
+                        📧 Email Roster Management
+                    </div>
+                    <div class="agenda-content">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
+                            <div>
+                                <h4 style="color: #1976d2; margin-bottom: 1rem;">📋 Current Member List</h4>
+                                <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; max-height: 300px; overflow-y: auto;">
+                                    <div id="memberListDisplay">
+                                        <div class="loading-container">
+                                            <div class="loading"></div>
+                                            <p>Loading members...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 style="color: #1976d2; margin-bottom: 1rem;">📧 Email Roster</h4>
+                                <div class="email-roster">
+                                    <div class="email-list" id="dashboardEmailList" style="max-height: 200px;">
+                                        <div class="loading-container">
+                                            <div class="loading"></div>
+                                            <p>Loading emails...</p>
+                                        </div>
+                                    </div>
+                                    <button onclick="copyDashboardEmails()" class="copy-button">Copy All Emails</button>
+                                    <button onclick="refreshEmailRoster()" class="btn-primary" style="width: auto; padding: 8px 16px; margin-left: 10px;">
+                                        Refresh List
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Member Management Section -->
+            <div id="memberManagementSection" style="display: none;">
+                <div class="agenda-section">
+                    <div class="agenda-header">
+                        👥 Member Management
+                    </div>
+                    <div class="agenda-content" id="dashboardMemberContent">
+                        <div class="loading-container">
+                            <div class="loading"></div>
+                            <p>Loading member management...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Agenda Editor Section -->
+            <div id="agendaEditorSection" style="display: none;">
+                <div class="agenda-section">
+                    <div class="agenda-header">
+                        📅 Meeting Agenda Editor
+                    </div>
+                    <div class="agenda-content">
+                        <div style="text-align: center; margin-bottom: 2rem;">
+                            <h3 style="margin-bottom: 1rem;">Select Meeting to Edit:</h3>
+                            <select id="dashboardMeetingSelect" onchange="loadDashboardAgenda()" style="padding: 12px 20px; border: 2px solid #1976d2; border-radius: 8px; font-size: 1rem; margin: 10px; min-width: 300px;">
+                                <option value="">Loading meetings...</option>
+                            </select>
+                        </div>
+                        
+                        <div id="dashboardAgendaDisplay">
+                            <p style="text-align: center; color: #666;">Select a meeting to edit its agenda.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Back to Home -->
+            <div style="text-align: center; margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #ddd;">
+                <button onclick="showSection('home')" class="btn-primary" style="width: auto; padding: 12px 24px; background: #666;">
+                    Return to Home
+                </button>
+            </div>
+        </section>
+
+        <!-- Login Section -->
+        <section id="login" class="content-section">
+            <div class="login-form">
+                <h2 id="loginTitle" style="text-align: center; margin-bottom: 1.5rem;">Member Login</h2>
+                <p id="loginDescription" style="text-align: center; margin-bottom: 1.5rem; color: #666; font-size: 0.9rem;">
+                    Login to access member features and sign up for roles.
+                </p>
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="username">Username:</label>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password:</label>
+                        <input type="password" id="password" name="password" required>
+                    </div>
+                    <button type="submit" class="btn-primary" id="loginButton">
+                        <span id="loginButtonText">Login</span>
+                        <span id="loginButtonLoading" style="display: none;">
+                            <span class="loading" style="width: 16px; height: 16px; display: inline-block; vertical-align: middle;"></span>
+                            Logging in...
+                        </span>
+                    </button>
+                </form>
+                <p style="text-align: center; margin-top: 1rem;">
+                    <a href="#" onclick="alert('Please contact the VP Education for password reset.')">Forgot Password?</a>
+                </p>
+                <div id="loginHelp" style="margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 5px; font-size: 0.85rem;">
+                    <strong>Demo Accounts:</strong><br>
+                    <strong>Members:</strong> demo@demo/demo123, lisa@demo123/demo123<br>
+                    <strong>Admin:</strong> CCET_Admin/CCET2018Toastmasters!
+                </div>
+            </div>
+        </section>
+
+        <!-- Meeting Agenda Section -->
+        <section id="agenda" class="content-section">
+            <h2>Future Meeting Agendas</h2>
+            <p id="agendaDescription">View the agendas for our upcoming meetings and sign up for speeches and roles.</p>
+            
+            <div class="meeting-selector">
+                <h3>Select Meeting:</h3>
+                <select id="meetingSelect" onchange="updateAgenda()">
+                    <option value="">Loading meetings...</option>
+                </select>
+                <div style="margin-top: 1rem;">
+                    <span id="selectedMeetingInfo"></span>
+                </div>
+            </div>
+
+            <div id="agendaDisplay">
+                <div class="loading-container">
+                    <div class="loading"></div>
+                    <p>Loading meeting agenda...</p>
+                </div>
+            </div>
+
+            <div id="visitorNote" class="role-card" style="display: none; margin-top: 2rem; background: #e3f2fd; border-left-color: #1976d2;">
+                <h3>👋 Visitors Welcome!</h3>
+                <p>Interested in joining? Visitors can attend any meeting to observe and participate in Table Topics. To sign up for roles and speeches, please become a member or contact us for a guest account.</p>
+                <div style="margin-top: 1rem;">
+                    <button onclick="showSection('contact')" class="btn-primary" style="width: auto; padding: 8px 16px; margin-right: 10px;">Contact Us</button>
+                    <button onclick="showLogin()" class="btn-primary" style="width: auto; padding: 8px 16px; background: #4caf50;">Member Login</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Other sections (Meeting Roles, Education, Resources, About, Contact) remain the same -->
+        <!-- I'll include just the structure to show they're preserved -->
+        
+        <!-- Meeting Roles Section -->
+        <section id="roles" class="content-section">
+            <h2>Meeting Roles - Next Meeting: <span id="nextMeetingDate">Loading...</span></h2>
+            <p>Sign up for meeting roles to practice your leadership skills and contribute to our club's success.</p>
+            <div id="rolesContent">
+                <div class="loading-container">
+                    <div class="loading"></div>
+                    <p>Loading meeting roles...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Education Section -->
+        <section id="education" class="content-section">
+            <h2>Educational Resources</h2>
+            <p>Access comprehensive guides and materials to enhance your Toastmasters journey.</p>
+            
+            <div class="resources-grid">
+                <div class="resource-card">
+                    <div class="resource-header">
+                        <h3>🎯 Pathways Learning Experience</h3>
+                    </div>
+                    <div class="resource-content">
+                        <h4>Interactive Learning Paths</h4>
+                        <p>Explore 11 specialized learning paths designed to develop your communication and leadership skills.</p>
+                        <a href="#" class="resource-link" onclick="alert('Login to access Pathways materials')">Access Pathways</a>
+                    </div>
+                </div>
+
+                <div class="resource-card">
+                    <div class="resource-header">
+                        <h3>📚 Speech Manuals</h3>
+                    </div>
+                    <div class="resource-content">
+                        <h4>Traditional Learning Materials</h4>
+                        <p>Download and access classic Toastmasters manuals including Competent Communicator and Competent Leader.</p>
+                        <a href="#" class="resource-link" onclick="alert('Login to download manuals')">Download Manuals</a>
+                    </div>
+                </div>
+
+                <div class="resource-card">
+                    <div class="resource-header">
+                        <h3>🎬 Video Resources</h3>
+                    </div>
+                    <div class="resource-content">
+                        <h4>Visual Learning Content</h4>
+                        <p>Watch educational videos covering speech techniques, leadership principles, and meeting role instructions.</p>
+                        <a href="#" class="resource-link" onclick="alert('Login to access videos')">Watch Videos</a>
+                    </div>
+                </div>
+
+                <div class="resource-card">
+                    <div class="resource-header">
+                        <h3>📝 Meeting Role Guides</h3>
+                    </div>
+                    <div class="resource-content">
+                        <h4>Step-by-Step Instructions</h4>
+                        <p>Detailed guides for every meeting role to help you prepare and excel in your responsibilities.</p>
+                        <a href="#" class="resource-link" onclick="showRoleGuides()">View Guides</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Resources Section -->
+        <section id="resources" class="content-section">
+            <h2>Club Resources</h2>
+            
+            <div class="roles-grid">
+                <div class="role-card">
+                    <h3>📋 Meeting Agenda Template</h3>
+                    <p>Standard agenda format for our weekly meetings.</p>
+                    <a href="#" class="resource-link" onclick="alert('Login to download agenda template')">Download</a>
+                </div>
+
+                <div class="role-card">
+                    <h3>📊 Evaluation Forms</h3>
+                    <p>Speech evaluation forms and meeting role evaluation sheets.</p>
+                    <a href="#" class="resource-link" onclick="alert('Login to access evaluation forms')">Access Forms</a>
+                </div>
+
+                <div class="role-card">
+                    <h3>🏆 Awards & Recognition</h3>
+                    <p>Information about club awards, contests, and recognition programs.</p>
+                    <a href="#" class="resource-link" onclick="alert('Login to view awards information')">View Awards</a>
+                </div>
+
+                <div class="role-card">
+                    <h3>📞 Member Directory</h3>
+                    <p>Contact information for all club members (members only).</p>
+                    <a href="#" class="resource-link" onclick="alert('Login to access member directory')">Member Directory</a>
+                </div>
+
+                <div class="role-card">
+                    <h3>📈 Club Performance</h3>
+                    <p>Track our club's progress toward Distinguished Club Program goals.</p>
+                    <a href="#" class="resource-link" onclick="alert('Login to view club performance')">View Progress</a>
+                </div>
+
+                <div class="role-card">
+                    <h3>🎪 Special Events</h3>
+                    <p>Information about contests, social events, and special meetings.</p>
+                    <a href="#" class="resource-link" onclick="alert('Login to view special events')">View Events</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="content-section">
+            <h2>About Crystal City Evening Toastmasters</h2>
+            
+            <div class="role-card">
+                <h3>Our Mission</h3>
+                <p>We provide a supportive and positive learning experience in which members are empowered to develop communication and leadership skills, resulting in greater self-confidence and personal growth.</p>
+            </div>
+
+            <div class="role-card">
+                <h3>Club History</h3>
+                <p>Founded in 2018, Crystal City Evening Toastmasters has been serving the Arlington and Washington D.C. area with a commitment to excellence in communication and leadership development. Our diverse membership includes professionals from various industries, all united by the desire to improve their speaking and leadership abilities.</p>
+            </div>
+
+            <div class="role-card">
+                <h3>Why Join Toastmasters?</h3>
+                <ul style="margin-left: 20px;">
+                    <li>Improve public speaking skills</li>
+                    <li>Develop leadership abilities</li>
+                    <li>Build self-confidence</li>
+                    <li>Expand professional network</li>
+                    <li>Enhance career opportunities</li>
+                    <li>Learn in a supportive environment</li>
+                </ul>
+            </div>
+
+            <div class="role-card">
+                <h3>Club Officers</h3>
+                <p id="clubOfficers">Loading club officers...</p>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="content-section">
+            <h2>Contact Us</h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                <div class="role-card">
+                    <h3>📍 Meeting Location</h3>
+                    <p>Meeting Location:<br>
+                    Crystal City Community Center<br>
+                    1234 Jefferson Davis Highway<br>
+                    Arlington, VA 22202</p>
+                    <div class="map-links">
+                        <a href="https://maps.apple.com/?q=1234+Jefferson+Davis+Highway+Arlington+VA+22202" target="_blank" class="map-link apple">📍 Apple Maps Directions</a>
+                        <a href="https://www.google.com/maps/dir/?api=1&destination=1234+Jefferson+Davis+Highway+Arlington+VA+22202" target="_blank" class="map-link">🗺️ Google Maps Directions</a>
+                    </div>
+                    <p style="margin-top: 1rem;"><strong>Meeting Time:</strong><br>
+                    1st & 3rd Tuesday of each month<br>
+                    7:00 PM - 8:30 PM<br>
+                    <small>1st Tuesday: In-person | 3rd Tuesday: Virtual</small></p>
+                </div>
+
+                <div class="role-card">
+                    <h3>📧 Contact Information</h3>
+                    <p><strong>Membership Questions or <br> General Inquiries:</strong><br>
+                    crystalcityeveningtm@gmail.com</p>
+                </div>
+
+                <div class="role-card">
+                    <h3>🌐 Find Us Online</h3>
+                    <p><strong>Facebook:</strong> Crystal City Evening Toastmasters</p>
+                    <p><strong>LinkedIn:</strong> Crystal City Evening Toastmasters</p>
+                    <p><strong>Meetup:</strong> Crystal City Toastmasters</p>
+                </div>
+            </div>
+
+            <div class="role-card" style="margin-top: 2rem;">
+                <h3>Visit Us</h3>
+                <p>Interested in joining or just want to see what we're about? Visitors are always welcome at our meetings! No registration required - just show up and introduce yourself. We'll make sure you feel welcome and give you a chance to participate if you'd like.</p>
+                <p><strong>What to expect:</strong> A typical meeting includes prepared speeches, impromptu speaking (Table Topics), evaluations, and plenty of encouragement. Meetings last about 90 minutes and are filled with learning and laughter.</p>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Crystal City Evening Toastmasters</h4>
+                    <p>Building confident communicators and leaders since 2018</p>
+                    <p>Club #1234567 | District 36</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="https://www.toastmasters.org" target="_blank">Toastmasters International</a></li>
+                        <li><a href="#" onclick="alert('Login to access member portal')">Member Portal</a></li>
+                        <li><a href="#" onclick="showSection('contact')">Contact Us</a></li>
+                        <li><a href="#" onclick="showSection('about')">About</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Meeting Info</h4>
+                    <p>1st & 3rd Tuesday each month<br>7:00 PM - 8:30 PM<br>Meeting Location: Crystal City Community Center<br>Arlington, VA</p>
+                </div>
+            </div>
+            <p style="border-top: 1px solid #555; padding-top: 1rem; margin-top: 1rem;">
+                © 2025 Crystal City Evening Toastmasters. All rights reserved.
+            </p>
+        </div>
+    </footer>
+
+    <!-- API Client Script -->
+    <script src="/js/api-client.js"></script>
+    
+    <!-- Modified Application Script -->
+    <script>
+        // State management
+        let currentUser = null;
+        let isAdminLogin = false;
+        let meetings = {};
+        let selectedMeetingId = null;
+        let selectedAdminMeetingId = null;
+        let currentSpeechSlot = null;
+
+        // API Client instance
+        const apiClient = window.apiClient;
+
+        // Navigation functions
+        function showSection(sectionId) {
+            console.log('Showing section:', sectionId);
+            
+            // Check admin access
+            if ((sectionId === 'admin' || sectionId === 'admin-dashboard') && (!currentUser || !currentUser.isAdmin)) {
+                console.log('Admin access denied');
+                alert('Access denied. Admin privileges required. Please login with admin credentials.');
+                showAdminLogin();
+                return;
+            }
+
+            // Check member access for certain sections
+            if (sectionId === 'roles' && !currentUser) {
+                alert('Member login required to access meeting roles.');
+                showLogin();
+                return;
+            }
+            
+            // Hide all sections
+            const sections = document.querySelectorAll('.content-section');
+            sections.forEach(section => section.classList.remove('active'));
+            
+            // Show selected section
+            const targetSection = document.getElementById(sectionId);
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
+            
+            // Update navigation
+            updateActiveNav(sectionId);
+
+            // Special handling for different sections
+            if (sectionId === 'agenda') {
+                updateAgenda();
+            } else if (sectionId === 'admin-dashboard' && currentUser && currentUser.isAdmin) {
+                setTimeout(() => {
+                    initializeDashboard();
+                }, 100);
+            } else if (sectionId === 'roles' && currentUser) {
+                loadMeetingRoles();
+            }
+        }
+
+        function updateActiveNav(sectionId) {
+            const allNavLinks = document.querySelectorAll('.nav-links a');
+            allNavLinks.forEach(link => link.classList.remove('active'));
+            
+            const targetLink = document.getElementById(`nav-${sectionId}`);
+            if (targetLink) {
+                targetLink.classList.add('active');
+            }
+        }
+
+        // Authentication functions
+        function showLogin() {
+            if (currentUser) {
+                logout();
+            } else {
+                isAdminLogin = false;
+                updateLoginForm();
+                showSection('login');
+            }
+        }
+
+        function showAdminLogin() {
+            isAdminLogin = true;
+            updateLoginForm();
+            showSection('login');
+            updateActiveNav('login');
+        }
+
+        function updateLoginForm() {
+            const title = document.getElementById('loginTitle');
+            const description = document.getElementById('loginDescription');
+            const loginButton = document.getElementById('loginButton');
+            const loginHelp = document.getElementById('loginHelp');
+            
+            if (isAdminLogin) {
+                title.textContent = '🔐 Admin Login';
+                title.style.color = '#d32f2f';
+                description.textContent = 'Admin access required. Login with administrator credentials.';
+                description.style.color = '#d32f2f';
+                loginButton.style.background = '#d32f2f';
+                loginHelp.innerHTML = '<strong>Admin Account:</strong><br>Username: CCET_Admin<br>Password: CCET2018Toastmasters!';
+                loginHelp.style.background = '#ffebee';
+            } else {
+                title.textContent = 'Member Login';
+                title.style.color = '#333';
+                description.textContent = 'Login to access member features and sign up for roles.';
+                description.style.color = '#666';
+                loginButton.style.background = '#1976d2';
+                loginHelp.innerHTML = '<strong>Demo Accounts:</strong><br><strong>Members:</strong> demo/demo, lisa/demo123<br><strong>Admin:</strong> CCET_Admin/CCET2018Toastmasters!';
+                loginHelp.style.background = '#f8f9fa';
+            }
+        }
+
+        async function handleLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const loginButton = document.getElementById('loginButton');
+            const loginButtonText = document.getElementById('loginButtonText');
+            const loginButtonLoading = document.getElementById('loginButtonLoading');
+            
+            // Show loading state
+            loginButton.disabled = true;
+            loginButtonText.style.display = 'none';
+            loginButtonLoading.style.display = 'inline-block';
+            
+            try {
+                const user = await apiClient.login(username, password);
+                
+                // Check if admin login is required
+                if (isAdminLogin && !user.isAdmin) {
+                    alert('Access denied. This account does not have administrator privileges.\n\nUse: CCET_Admin / CCET2018Toastmasters!');
+                    apiClient.logout();
+                    return;
+                }
+                
+                currentUser = user;
+                
+                // Clear form
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                
+                // Update auth display
+                updateAuthDisplay();
+                
+                // Redirect based on login type
+                if (isAdminLogin && currentUser.isAdmin) {
+                    isAdminLogin = false;
+                    alert(`Welcome ${currentUser.name}! You have admin access.`);
+                    await initializeMeetings();
+                        setTimeout(() => {
+                        showSection('admin-dashboard');
+                        initializeDashboard();
+                    }, 100);
+                } else {
+                    isAdminLogin = false;
+                    alert(`Welcome back, ${currentUser.name}!`);
+                    await initializeMeetings();
+                    showSection('home');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                if (isAdminLogin) {
+                    alert('Invalid admin credentials.\n\nAdmin Account:\nUsername: CCET_Admin\nPassword: CCET2018Toastmasters!');
+                } else {
+                    alert('Invalid username or password.\n\nDemo Accounts:\nMembers: demo/demo, lisa/demo123\nAdmin: CCET_Admin/CCET2018Toastmasters!');
+                }
+            } finally {
+                loginButton.disabled = false;
+                loginButtonText.style.display = 'inline';
+                loginButtonLoading.style.display = 'none';
+            }
+        }
+
+        function logout() {
+            apiClient.logout();
+            currentUser = null;
+            isAdminLogin = false;
+            updateAuthDisplay();
+            showSection('home');
+            alert('You have been logged out.');
+        }
+
+        function updateAuthDisplay() {
+            const authSection = document.getElementById('authSection');
+            const rolesNavItem = document.getElementById('roles-nav-item');
+            const adminNavItem = document.getElementById('admin-nav-item');
+            const adminDashboardNavItem = document.getElementById('admin-dashboard-nav-item');
+            const secondaryNav = document.getElementById('secondaryNav');
+            
+            if (currentUser) {
+                authSection.innerHTML = `
+                    <span class="user-welcome">Welcome, ${currentUser.name}</span>
+                    <button onclick="logout()">Logout</button>
+                `;
+                
+                secondaryNav.style.display = 'flex';
+                rolesNavItem.style.display = 'block';
+                
+                if (currentUser.isAdmin) {
+                    adminNavItem.style.display = 'none';
+                    adminDashboardNavItem.style.display = 'block';
+                } else {
+                    adminNavItem.style.display = 'none';
+                    adminDashboardNavItem.style.display = 'none';
+                }
+            } else {
+                authSection.innerHTML = `
+                    <button onclick="showLogin()">Member Login</button>
+                    <button onclick="showAdminLogin()">Admin Login</button>
+                `;
+                secondaryNav.style.display = 'none';
+                rolesNavItem.style.display = 'none';
+                adminNavItem.style.display = 'none';
+                adminDashboardNavItem.style.display = 'none';
+            }
+            
+            if (document.getElementById('agenda').classList.contains('active')) {
+                updateAgenda();
+            }
+        }
+
+        // Meeting Management Functions
+        async function initializeMeetings() {
+            try {
+                const meetingsData = await apiClient.getMeetings();
+                
+                meetings = {};
+                
+                // Process each meeting
+                for (const meeting of meetingsData) {
+                    // Get detailed information for each meeting
+                    const details = await apiClient.getMeetingDetails(meeting.id);
+                    
+                    meetings[meeting.id] = {
+                        date: (() => {
+                        const [year, month, day] = meeting.date.split('-');
+                        return new Date(year, month - 1, day);
+                        })(),
+                        type: meeting.type,
+                        location: meeting.location,
+                        roles: details.roles || {},
+                        speakers: new Array(4).fill(null),
+                        evaluators: new Array(4).fill(null)
+                    };
+                    
+                    // Fill speakers array
+                    details.speeches?.forEach((speech, index) => {
+                        if (index < 4) {
+                            meetings[meeting.id].speakers[index] = {
+                                name: speech.user_name,
+                                title: speech.title,
+                                project: speech.project
+                            };
+                        }
+                    });
+                    
+                    // Fill evaluators array  
+                    details.evaluators?.forEach((evaluator, index) => {
+                        if (index < 4) {
+                            meetings[meeting.id].evaluators[index] = evaluator.user_name;
+                        }
+                    });
+                }
+                
+                populateMeetingSelector();
+                populateAdminMeetingSelector();
+                populateDashboardMeetingSelector();
+                
+                const nextMeetingId = Object.keys(meetings).sort()[0];
+                if (nextMeetingId) {
+                    selectedMeetingId = nextMeetingId;
+                    const select = document.getElementById('meetingSelect');
+                    if (select) {
+                        select.value = nextMeetingId;
+                        updateAgenda();
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load meetings:', error);
+                showConnectionError();
+            }
+        }
+
+        function showConnectionError() {
+            const agendaDisplay = document.getElementById('agendaDisplay');
+            if (agendaDisplay) {
+                agendaDisplay.innerHTML = `
+                    <div class="role-card" style="text-align: center; color: #d32f2f;">
+                        <h3>⚠️ Connection Error</h3>
+                        <p>Unable to connect to the server. Please check your connection and try again.</p>
+                        <button onclick="window.location.reload()" class="btn-primary" style="width: auto; margin-top: 1rem;">
+                            Refresh Page
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function populateMeetingSelector() {
+            const select = document.getElementById('meetingSelect');
+            if (!select) return;
+            
+            select.innerHTML = '';
+            
+            const sortedMeetings = Object.entries(meetings).sort((a, b) => a[1].date - b[1].date);
+            
+            if (sortedMeetings.length === 0) {
+                select.innerHTML = '<option value="">No upcoming meetings scheduled</option>';
+                return;
+            }
+            
+            sortedMeetings.forEach(([id, meeting]) => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = meeting.date.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                select.appendChild(option);
+            });
+        }
+
+        function populateAdminMeetingSelector() {
+            const select = document.getElementById('adminMeetingSelect');
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">Select a meeting to edit...</option>';
+            
+            const sortedMeetings = Object.entries(meetings).sort((a, b) => a[1].date - b[1].date);
+            
+            sortedMeetings.forEach(([id, meeting]) => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = meeting.date.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                select.appendChild(option);
+            });
+        }
+
+        function updateAgenda() {
+            const select = document.getElementById('meetingSelect');
+            if (!select) return;
+            
+            selectedMeetingId = select.value;
+            
+            if (!selectedMeetingId || !meetings[selectedMeetingId]) return;
+            
+            const meeting = meetings[selectedMeetingId];
+            
+            const meetingInfo = document.getElementById('selectedMeetingInfo');
+            if (meetingInfo) {
+                meetingInfo.innerHTML = `
+                    <strong>${meeting.date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</strong>
+                    <span class="meeting-type-badge ${meeting.type.replace('-', '')}">${meeting.type.toUpperCase()}</span><br>
+                    <small>📍 ${meeting.location} • 7:00 PM - 8:30 PM</small>
+                `;
+            }
+            
+            const description = document.getElementById('agendaDescription');
+            const visitorNote = document.getElementById('visitorNote');
+            
+            if (description) {
+                if (currentUser) {
+                    description.textContent = 'View the agendas for our upcoming meetings and sign up for speeches and roles.';
+                    if (visitorNote) visitorNote.style.display = 'none';
+                } else {
+                    description.textContent = 'View the agendas for our upcoming meetings. Login as a member to sign up for roles and speeches.';
+                    if (visitorNote) visitorNote.style.display = 'block';
+                }
+            }
+            
+            const agendaDisplay = document.getElementById('agendaDisplay');
+            if (agendaDisplay) {
+                agendaDisplay.innerHTML = generateAgendaHTML(meeting);
+            }
+        }
+
+        function generateAgendaHTML(meeting) {
+            let locationDisplay = meeting.location;
+            if (meeting.type === 'in-person') {
+                locationDisplay = `${meeting.location} - 1234 Jefferson Davis Highway, Arlington, VA 22202`;
+            }
+
+            return `
+                <div class="agenda-section">
+                    <div class="agenda-header">
+                        Meeting Agenda - ${meeting.date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                        <span class="meeting-type-badge ${meeting.type.replace('-', '')}">${meeting.type.toUpperCase()}</span>
+                    </div>
+                    <div class="agenda-content">
+                        <div style="text-align: center; margin-bottom: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                            <strong>📍 ${locationDisplay}</strong><br>
+                            <small>7:00 PM - 8:30 PM</small>
+                            ${meeting.type === 'in-person' ? `
+                            <div class="map-links">
+                                <a href="https://maps.apple.com/?q=1234+Jefferson+Davis+Highway+Arlington+VA+22202" target="_blank" class="map-link apple">📍 Apple Maps Directions</a>
+                                <a href="https://www.google.com/maps/dir/?api=1&destination=1234+Jefferson+Davis+Highway+Arlington+VA+22202" target="_blank" class="map-link">🗺️ Google Maps Directions</a>
+                            </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="agenda-line section-header">
+                            <span>🎯 Meeting Leadership</span>
+                        </div>
+                        ${generateAgendaLine('Toastmaster of the Evening', meeting.roles['toastmaster-of-the-evening'] || meeting.roles.toastmaster, 'toastmaster')}
+                        ${generateAgendaLine('General Evaluator', meeting.roles['general-evaluator'] || meeting.roles.evaluator, 'evaluator')}
+                        ${generateAgendaLine('Ah-Counter/Grammarian', meeting.roles['ah-counter-grammarian'] || meeting.roles['ah-counter/grammarian'], 'ah-counter-grammarian')}
+                        ${generateAgendaLine('Timer', meeting.roles.timer, 'timer')}
+                        
+                        <div class="agenda-line section-header">
+                            <span>🎤 Prepared Speeches</span>
+                        </div>
+                        ${generateSpeakerLine('Speaker#1', meeting.speakers[0], 0)}
+                        ${generateSpeakerLine('Speaker#2', meeting.speakers[1], 1)}
+                        ${generateSpeakerLine('Speaker#3', meeting.speakers[2], 2)}
+                        ${generateSpeakerLine('Speaker#4', meeting.speakers[3], 3)}
+                        
+                        <div class="agenda-line section-header">
+                            <span>🗣️ Table Topics & Evaluations</span>
+                        </div>
+                        ${generateAgendaLine('Table Topics Master', meeting.roles['table-topics-master'] || meeting.roles.topics, 'topics')}
+                        ${generateEvaluatorLine('Evaluator#1', meeting.evaluators[0], 0)}
+                        ${generateEvaluatorLine('Evaluator#2', meeting.evaluators[1], 1)}
+                        ${generateEvaluatorLine('Evaluator#3', meeting.evaluators[2], 2)}
+                        ${generateEvaluatorLine('Evaluator#4', meeting.evaluators[3], 3)}
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateAgendaLine(role, assignment, roleId) {
+            let roleDisplay = `<span class="agenda-role">${role}: `;
+            if (assignment) {
+                roleDisplay += `<span class="assignment-name">${assignment}</span>`;
+            } else {
+                roleDisplay += `<span class="assignment-empty">Available</span>`;
+            }
+            roleDisplay += `</span>`;
+            
+            let actionButton = '';
+            if (currentUser) {
+                if (currentUser.isAdmin) {
+                    if (assignment) {
+                        actionButton = `<button class="admin-edit-button" onclick="adminEditRole('${roleId}', '${role}')">Edit</button>`;
+                    } else {
+                        actionButton = `<button class="signup-button" onclick="signUpForRole('${roleId}', '${role}')">Sign Up</button>`;
+                    }
+                } else {
+                    if (assignment && assignment === currentUser.name) {
+                        actionButton = `<button class="remove-button" onclick="removeRoleAssignment('${roleId}')">Remove</button>`;
+                    } else if (!assignment) {
+                        actionButton = `<button class="signup-button" onclick="signUpForRole('${roleId}', '${role}')">Sign Up</button>`;
+                    }
+                }
+            } else if (!assignment) {
+                actionButton = `<button class="signup-button" disabled title="Member login required">Sign Up</button>`;
+            }
+            
+            return `
+                <div class="agenda-line">
+                    ${roleDisplay}
+                    <div class="agenda-assignment">
+                        ${actionButton}
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateSpeakerLine(speakerSlot, assignment, index) {
+            let speakerDisplay = `<span class="agenda-role">${speakerSlot}: `;
+            if (assignment) {
+                speakerDisplay += `<span class="assignment-name">${assignment.name}</span> - <span class="assignment-title">"${assignment.title}"</span>`;
+                if (assignment.project && assignment.project !== 'TBD') {
+                    speakerDisplay += ` <span class="assignment-project">(${assignment.project})</span>`;
+                }
+            } else {
+                speakerDisplay += `<span class="assignment-empty">Available</span>`;
+            }
+            speakerDisplay += `</span>`;
+            
+            let actionButton = '';
+            if (currentUser) {
+                if (currentUser.isAdmin) {
+                    if (assignment) {
+                        actionButton = `<button class="admin-edit-button" onclick="adminEditSpeaker(${index})">Edit</button>`;
+                    } else {
+                        actionButton = `<button class="signup-button" onclick="signUpForSpeech(${index})">Sign Up</button>`;
+                    }
+                } else {
+                    if (assignment && assignment.name === currentUser.name) {
+                        actionButton = `<button class="remove-button" onclick="removeSpeaker(${index})">Remove</button>`;
+                    } else if (!assignment) {
+                        actionButton = `<button class="signup-button" onclick="signUpForSpeech(${index})">Sign Up</button>`;
+                    }
+                }
+            } else if (!assignment) {
+                actionButton = `<button class="signup-button" disabled title="Member login required">Sign Up</button>`;
+            }
+            
+            return `
+                <div class="agenda-line">
+                    ${speakerDisplay}
+                    <div class="agenda-assignment">
+                        ${actionButton}
+                    </div>
+                </div>
+            `;
+        }
+
+        function generateEvaluatorLine(evaluatorSlot, assignment, index) {
+            let evaluatorDisplay = `<span class="agenda-role">${evaluatorSlot}: `;
+            if (assignment) {
+                evaluatorDisplay += `<span class="assignment-name">${assignment}</span>`;
+            } else {
+                evaluatorDisplay += `<span class="assignment-empty">Available</span>`;
+            }
+            evaluatorDisplay += `</span>`;
+            
+            let actionButton = '';
+            if (currentUser) {
+                if (currentUser.isAdmin) {
+                    if (assignment) {
+                        actionButton = `<button class="admin-edit-button" onclick="adminEditEvaluator(${index})">Edit</button>`;
+                    } else {
+                        actionButton = `<button class="signup-button" onclick="signUpForEvaluator(${index})">Sign Up</button>`;
+                    }
+                } else {
+                    if (assignment && assignment === currentUser.name) {
+                        actionButton = `<button class="remove-button" onclick="removeEvaluator(${index})">Remove</button>`;
+                    } else if (!assignment) {
+                        actionButton = `<button class="signup-button" onclick="signUpForEvaluator(${index})">Sign Up</button>`;
+                    }
+                }
+            } else if (!assignment) {
+                actionButton = `<button class="signup-button" disabled title="Member login required">Sign Up</button>`;
+            }
+            
+            return `
+                <div class="agenda-line">
+                    ${evaluatorDisplay}
+                    <div class="agenda-assignment">
+                        ${actionButton}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Speech Modal Functions
+        function showSpeechModal(slotIndex) {
+            currentSpeechSlot = slotIndex;
+            document.getElementById('speechTitle').value = '';
+            document.getElementById('speechProject').value = '';
+            document.getElementById('speechModal').style.display = 'block';
+            document.getElementById('speechTitle').focus();
+        }
+
+        function closeSpeechModal() {
+            document.getElementById('speechModal').style.display = 'none';
+            currentSpeechSlot = null;
+        }
+
+        async function confirmSpeechSignup() {
+            const title = document.getElementById('speechTitle').value.trim();
+            const project = document.getElementById('speechProject').value.trim() || 'TBD';
+            
+            if (!title) {
+                alert('Speech title is required.');
+                return;
+            }
+            
+            try {
+                await apiClient.signUpForSpeech(selectedMeetingId, currentSpeechSlot, title, project);
+                closeSpeechModal();
+                await initializeMeetings();
+                alert('Successfully signed up for speech slot!');
+            } catch (error) {
+                alert('Failed to sign up for speech. Please try again.');
+            }
+        }
+
+        // Meeting Signup Functions
+        function signUpForSpeech(slotIndex) {
+            if (!currentUser) {
+                alert('Please login to sign up for speeches.');
+                return;
+            }
+            
+            const meeting = meetings[selectedMeetingId];
+            if (meeting.speakers[slotIndex]) {
+                alert('This speech slot is already taken.');
+                return;
+            }
+            
+            showSpeechModal(slotIndex);
+        }
+
+        async function signUpForEvaluator(slotIndex) {
+            if (!currentUser) {
+                alert('Please login to sign up for evaluator roles.');
+                return;
+            }
+            
+            const meeting = meetings[selectedMeetingId];
+            if (meeting.evaluators[slotIndex]) {
+                alert('This evaluator slot is already taken.');
+                return;
+            }
+            
+            try {
+                await apiClient.signUpForEvaluator(selectedMeetingId, slotIndex);
+                await initializeMeetings();
+                alert('Successfully signed up as evaluator!');
+            } catch (error) {
+                alert('Failed to sign up as evaluator. Please try again.');
+            }
+        }
+
+        async function signUpForRole(roleId, roleTitle) {
+            if (!currentUser) {
+                alert('Please login to sign up for roles.');
+                return;
+            }
+            
+            const meeting = meetings[selectedMeetingId];
+            if (meeting.roles[roleId]) {
+                alert('This role is already taken.');
+                return;
+            }
+            
+            try {
+                await apiClient.signUpForRole(selectedMeetingId, roleId);
+                await initializeMeetings();
+                alert(`Successfully signed up for ${roleTitle}!`);
+            } catch (error) {
+                alert('Failed to sign up for role. Please try again.');
+            }
+        }
+
+        async function removeRoleAssignment(roleId) {
+            try {
+                await apiClient.removeRole(selectedMeetingId, roleId);
+                await initializeMeetings();
+                alert('Role assignment removed successfully.');
+            } catch (error) {
+                alert('Failed to remove role assignment.');
+            }
+        }
+
+        async function removeSpeaker(index) {
+            try {
+                await apiClient.removeSpeech(selectedMeetingId, index);
+                await initializeMeetings();
+                alert('Speech removed successfully.');
+            } catch (error) {
+                alert('Failed to remove speech.');
+            }
+        }
+
+        async function removeEvaluator(index) {
+            try {
+                await apiClient.removeEvaluator(selectedMeetingId, index);
+                await initializeMeetings();
+                alert('Evaluator assignment removed successfully.');
+            } catch (error) {
+                alert('Failed to remove evaluator assignment.');
+            }
+        }
+
+        // Admin Edit Functions
+        async function adminEditRole(roleId, roleTitle) {
+            const meeting = meetings[selectedMeetingId];
+            const currentAssignment = meeting.roles[roleId];
+            
+            let newAssignment = prompt(
+                `Edit ${roleTitle}:\n\nCurrent: ${currentAssignment || 'None'}\n\nEnter new assignment (or leave empty to clear):`,
+                currentAssignment || ''
+            );
+            
+            if (newAssignment !== null) {
+                try {
+                    if (newAssignment.trim()) {
+                        await apiClient.request('/meetings/roles', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                meetingId: selectedMeetingId,
+                                roleType: roleId,
+                                roleName: newAssignment.trim()
+                            })
+                        });
+                    } else {
+                        await apiClient.request('/meetings/roles', {
+                            method: 'DELETE',
+                            body: JSON.stringify({
+                                meetingId: selectedMeetingId,
+                                roleType: roleId
+                            })
+                        });
+                    }
+                    await initializeMeetings();
+                    alert('Role updated successfully!');
+                } catch (error) {
+                    alert('Failed to update role.');
+                }
+            }
+        }
+
+        async function adminEditSpeaker(index) {
+            const meeting = meetings[selectedMeetingId];
+            const currentSpeaker = meeting.speakers[index];
+            
+            if (currentSpeaker) {
+                const name = prompt('Speaker name:', currentSpeaker.name);
+                if (name === null) return;
+                
+                const title = prompt('Speech title:', currentSpeaker.title);
+                if (title === null) return;
+                
+                const project = prompt('Project/Manual:', currentSpeaker.project);
+                if (project === null) return;
+                
+                if (name.trim() && title.trim()) {
+                    try {
+                        await apiClient.request('/meetings/speeches', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                meetingId: selectedMeetingId,
+                                slotNumber: index,
+                                name: name.trim(),
+                                title: title.trim(),
+                                project: project.trim() || 'TBD'
+                            })
+                        });
+                        await initializeMeetings();
+                        alert('Speaker updated successfully!');
+                    } catch (error) {
+                        alert('Failed to update speaker.');
+                    }
+                } else {
+                    alert('Both name and title are required.');
+                }
+            } else {
+                signUpForSpeech(index);
+            }
+        }
+
+        async function adminEditEvaluator(index) {
+            const meeting = meetings[selectedMeetingId];
+            const currentEvaluator = meeting.evaluators[index];
+            
+            const newEvaluator = prompt(
+                `Edit Evaluator #${index + 1}:\n\nCurrent: ${currentEvaluator || 'None'}\n\nEnter evaluator name (or leave empty to clear):`,
+                currentEvaluator || ''
+            );
+            
+            if (newEvaluator !== null) {
+                try {
+                    if (newEvaluator.trim()) {
+                        await apiClient.request('/meetings/evaluators', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                meetingId: selectedMeetingId,
+                                slotNumber: index,
+                                evaluatorName: newEvaluator.trim()
+                            })
+                        });
+                    } else {
+                        await apiClient.request('/meetings/evaluators', {
+                            method: 'DELETE',
+                            body: JSON.stringify({
+                                meetingId: selectedMeetingId,
+                                slotNumber: index
+                            })
+                        });
+                    }
+                    await initializeMeetings();
+                    alert('Evaluator updated successfully!');
+                } catch (error) {
+                    alert('Failed to update evaluator.');
+                }
+            }
+        }
+
+        // Admin Portal Functions
+        async function showMemberManagement() {
+            if (!currentUser || !currentUser.isAdmin) {
+                alert('Admin access required.');
+                return;
+            }
+            
+            const panel = document.getElementById('memberManagementPanel');
+            const content = document.getElementById('memberManagementContent');
+            
+            panel.style.display = 'block';
+            
+            try {
+                const members = await apiClient.getMembers();
+                const applications = await apiClient.getApplications();
+                
+                content.innerHTML = `
+                    <!-- Pending Applications -->
+                    <h3 style="color: #1976d2; margin-bottom: 1rem;">📥 Pending Applications</h3>
+                    <div id="pendingApplications">
+                        ${applications.filter(app => app.status === 'pending').length === 0 ? 
+                            '<p style="color: #666; font-style: italic;">No pending applications</p>' :
+                            applications.filter(app => app.status === 'pending').map(app => `
+                                <div class="member-card">
+                                    <div class="member-info">
+                                        <div class="member-name">${app.name}</div>
+                                        <div class="member-details">
+                                            ${app.email} • Applied: ${new Date(app.submitted_date).toLocaleDateString()}
+                                            <span class="status-badge status-pending">PENDING</span>
+                                        </div>
+                                    </div>
+                                    <div class="member-actions">
+                                        <button class="approve-button" onclick="approveApplication(${app.id})">Approve</button>
+                                        <button class="reject-button" onclick="rejectApplication(${app.id})">Reject</button>
+                                    </div>
+                                </div>
+                            `).join('')
+                        }
+                    </div>
+
+                    <!-- Current Members -->
+                    <h3 style="color: #1976d2; margin-bottom: 1rem; margin-top: 2rem;">👥 Current Members</h3>
+                    <div id="currentMembers">
+                        ${members.map(member => `
+                            <div class="member-card">
+                                <div class="member-info">
+                                    <div class="member-name">${member.name}</div>
+                                    <div class="member-details">
+                                        ${member.email} • ${member.role} • Joined: ${new Date(member.joined_date).toLocaleDateString()}
+                                        <span class="status-badge ${member.role === 'admin' ? 'status-admin' : 'status-active'}">
+                                            ${member.role === 'admin' ? 'ADMIN' : 'ACTIVE'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="member-actions">
+                                    ${member.email !== 'CCET_Admin' ? 
+                                        `<button class="remove-button-admin" onclick="removeMember(${member.id})">Remove</button>` : 
+                                        '<span style="color: #666; font-size: 0.85rem;">Protected</span>'}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <!-- Add New Member -->
+                    <h3 style="color: #1976d2; margin-bottom: 1rem; margin-top: 2rem;">➕ Add New Member</h3>
+                    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 10px;">
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1rem;">
+                            <input type="text" id="newMemberName" placeholder="Full Name" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                            <input type="email" id="newMemberEmail" placeholder="Email Address" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                            <input type="password" id="newMemberPassword" placeholder="Temporary Password" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                            <select id="newMemberRole" style="padding: 8px; border: 1px solid #ddd; border-radius: 5px;">
+                                <option value="member">Member</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        <button onclick="addNewMember()" class="btn-primary" style="width: auto; padding: 8px 16px;">
+                            Add Member
+                        </button>
+                    </div>
+
+                    <div style="margin-top: 2rem; text-align: center;">
+                        <button onclick="hideMemberManagement()" class="btn-primary" style="width: auto; padding: 8px 16px; background: #666;">
+                            Close
+                        </button>
+                    </div>
+                `;
+                
+                panel.scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                content.innerHTML = `
+                    <div class="role-card" style="text-align: center; color: #d32f2f;">
+                        <h3>⚠️ Failed to Load Member Data</h3>
+                        <p>${error.message}</p>
+                        <button onclick="showMemberManagement()" class="btn-primary" style="width: auto; margin-top: 1rem;">
+                            Retry
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        function hideMemberManagement() {
+            document.getElementById('memberManagementPanel').style.display = 'none';
+        }
+
+        async function showEmailRoster() {
+            if (!currentUser || !currentUser.isAdmin) {
+                alert('Admin access required.');
+                return;
+            }
+            
+            const panel = document.getElementById('emailRosterPanel');
+            const emailList = document.getElementById('emailRosterList');
+            
+            panel.style.display = 'block';
+            
+            try {
+                const members = await apiClient.getMembers();
+                const emailAddresses = members.map(member => member.email).join('; ');
+                
+                emailList.textContent = emailAddresses;
+                panel.scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                emailList.innerHTML = '<p style="color: #d32f2f;">Failed to load email roster.</p>';
+            }
+        }
+
+        function hideEmailRoster() {
+            document.getElementById('emailRosterPanel').style.display = 'none';
+        }
+
+        function showAgendaEditor() {
+            if (!currentUser || !currentUser.isAdmin) {
+                alert('Admin access required.');
+                return;
+            }
+            
+            const panel = document.getElementById('agendaEditorPanel');
+            panel.style.display = 'block';
+            populateAdminMeetingSelector();
+            panel.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function hideAgendaEditor() {
+            document.getElementById('agendaEditorPanel').style.display = 'none';
+        }
+
+        async function loadAdminAgenda() {
+            const select = document.getElementById('adminMeetingSelect');
+            selectedAdminMeetingId = select.value;
+            
+            if (!selectedAdminMeetingId) {
+                document.getElementById('adminAgendaDisplay').innerHTML = '<p style="text-align: center; color: #666;">Select a meeting to edit its agenda.</p>';
+                return;
+            }
+            
+            const meeting = meetings[selectedAdminMeetingId];
+            document.getElementById('adminAgendaDisplay').innerHTML = generateAdminAgendaHTML(meeting);
+        }
+
+        function generateAdminAgendaHTML(meeting) {
+            selectedMeetingId = selectedAdminMeetingId; // Set this for admin edit functions
+            return `
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <h4 style="color: #1976d2; margin-bottom: 0.5rem;">
+                        Editing: ${meeting.date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                        <span class="meeting-type-badge ${meeting.type.replace('-', '')}">${meeting.type.toUpperCase()}</span>
+                    </h4>
+                    <p style="color: #666; margin: 0;">Click "Edit" buttons to modify assignments. Changes are saved automatically.</p>
+                </div>
+                
+                ${generateAgendaHTML(meeting)}
+            `;
+        }
+
+        function copyEmailRoster() {
+            const emailList = document.getElementById('emailRosterList');
+            const text = emailList.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Email list copied to clipboard!');
+            }).catch(() => {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Email list copied to clipboard!');
+            });
+        }
+
+        // Dashboard functions
+        async function initializeDashboard() {
+            console.log('Initializing dashboard...');
+            
+            try {
+                await refreshEmailRoster();
+                
+                const emailSection = document.getElementById('emailRosterSection');
+                const memberSection = document.getElementById('memberManagementSection');
+                const agendaSection = document.getElementById('agendaEditorSection');
+                
+                if (emailSection) emailSection.style.display = 'none';
+                if (memberSection) memberSection.style.display = 'none';
+                if (agendaSection) agendaSection.style.display = 'none';
+                
+                console.log('Dashboard initialized successfully');
+            } catch (error) {
+                console.error('Error initializing dashboard:', error);
+            }
+        }
+
+        function populateDashboardMeetingSelector() {
+            const select = document.getElementById('dashboardMeetingSelect');
+            if (!select) return;
+            
+            select.innerHTML = '<option value="">Select a meeting to edit...</option>';
+            
+            const sortedMeetings = Object.entries(meetings).sort((a, b) => a[1].date - b[1].date);
+            
+            sortedMeetings.forEach(([id, meeting]) => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = meeting.date.toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                select.appendChild(option);
+            });
+        }
+
+        function toggleEmailRosterSection() {
+            const section = document.getElementById('emailRosterSection');
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                refreshEmailRoster();
+                section.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                section.style.display = 'none';
+            }
+        }
+
+        async function refreshEmailRoster() {
+            const memberList = document.getElementById('memberListDisplay');
+            const emailList = document.getElementById('dashboardEmailList');
+            
+            try {
+                const members = await apiClient.getMembers();
+                
+                if (memberList) {
+                    memberList.innerHTML = members.map(member => `
+                        <div style="padding: 0.5rem; border-bottom: 1px solid #eee; display: flex; justify-content: space-between;">
+                            <span><strong>${member.name}</strong></span>
+                            <span style="color: #666;">${member.email}</span>
+                        </div>
+                    `).join('');
+                }
+                
+                if (emailList) {
+                    const emailAddresses = members.map(member => member.email).join('; ');
+                    emailList.textContent = emailAddresses;
+                }
+            } catch (error) {
+                console.error('Failed to refresh email roster:', error);
+                if (memberList) memberList.innerHTML = '<p style="color: #d32f2f;">Failed to load members.</p>';
+                if (emailList) emailList.textContent = 'Failed to load emails.';
+            }
+        }
+
+        function copyDashboardEmails() {
+            const emailList = document.getElementById('dashboardEmailList');
+            const text = emailList.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Email list copied to clipboard!');
+            }).catch(() => {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Email list copied to clipboard!');
+            });
+        }
+
+        async function toggleMemberSection() {
+            const section = document.getElementById('memberManagementSection');
+            const content = document.getElementById('dashboardMemberContent');
+            
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                
+                try {
+                    const members = await apiClient.getMembers();
+                    const applications = await apiClient.getApplications();
+                    
+                    content.innerHTML = `
+                        <!-- Add New Member -->
+                        <h3 style="color: #1976d2; margin-bottom: 1rem;">➕ Add New Member</h3>
+                        <div style="background: #f8f9fa; padding: 2rem; border-radius: 10px; margin-bottom: 2rem;">
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                                <div>
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Full Name *</label>
+                                    <input type="text" id="dashboardNewMemberName" placeholder="Enter full name" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Email Address *</label>
+                                    <input type="email" id="dashboardNewMemberEmail" placeholder="Enter email address" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Temporary Password *</label>
+                                    <input type="text" id="dashboardNewMemberPassword" placeholder="Create temporary password" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                </div>
+                                <div>
+                                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Role</label>
+                                    <select id="dashboardNewMemberRole" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                                        <option value="member">Member</option>
+                                        <option value="admin">Admin</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <button onclick="addDashboardMember()" class="btn-primary" style="width: auto; padding: 12px 24px;">
+                                Add Member
+                            </button>
+                        </div>
+
+                        <!-- Pending Applications -->
+                        <h3 style="color: #1976d2; margin-bottom: 1rem;">📥 Pending Applications</h3>
+                        <div id="dashboardPendingApplications" style="margin-bottom: 2rem;">
+                            ${applications.filter(app => app.status === 'pending').length === 0 ? 
+                                '<p style="color: #666; font-style: italic;">No pending applications</p>' :
+                                applications.filter(app => app.status === 'pending').map(app => `
+                                    <div class="member-card">
+                                        <div class="member-info">
+                                            <div class="member-name">${app.name}</div>
+                                            <div class="member-details">
+                                                ${app.email} • Applied: ${new Date(app.submitted_date).toLocaleDateString()}
+                                                <span class="status-badge status-pending">PENDING</span>
+                                            </div>
+                                        </div>
+                                        <div class="member-actions">
+                                            <button class="approve-button" onclick="dashboardApproveApplication(${app.id})">Approve</button>
+                                            <button class="reject-button" onclick="dashboardRejectApplication(${app.id})">Reject</button>
+                                        </div>
+                                    </div>
+                                `).join('')
+                            }
+                        </div>
+
+                        <!-- Current Members -->
+                        <h3 style="color: #1976d2; margin-bottom: 1rem;">👥 Current Members</h3>
+                        <div style="margin-bottom: 1rem;">
+                            <input type="text" id="memberSearchInput" placeholder="Search members..." style="padding: 10px; border: 1px solid #ddd; border-radius: 5px; width: 300px;" onkeyup="filterMembers()">
+                        </div>
+                        <div id="dashboardCurrentMembers">
+                            ${members.map(member => `
+                                <div class="member-card" data-member-name="${member.name.toLowerCase()}" data-member-email="${member.email.toLowerCase()}" data-member-role="${member.role.toLowerCase()}">
+                                    <div class="member-info">
+                                        <div class="member-name">${member.name}</div>
+                                        <div class="member-details">
+                                            ${member.email} • ${member.role} • Joined: ${new Date(member.joined_date).toLocaleDateString()}
+                                            <span class="status-badge ${member.role === 'admin' ? 'status-admin' : 'status-active'}">
+                                                ${member.role === 'admin' ? 'ADMIN' : 'ACTIVE'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="member-actions">
+                                        ${member.email !== 'CCET_Admin' ? 
+                                            `<button class="remove-button-admin" onclick="dashboardRemoveMember(${member.id})">Remove</button>` : 
+                                            '<span style="color: #666; font-size: 0.85rem;">Protected</span>'}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                    
+                    section.scrollIntoView({ behavior: 'smooth' });
+                } catch (error) {
+                    content.innerHTML = `
+                        <div class="role-card" style="text-align: center; color: #d32f2f;">
+                            <h3>⚠️ Failed to Load Member Data</h3>
+                            <p>${error.message}</p>
+                            <button onclick="toggleMemberSection()" class="btn-primary" style="width: auto; margin-top: 1rem;">
+                                Retry
+                            </button>
+                        </div>
+                    `;
+                }
+            } else {
+                section.style.display = 'none';
+            }
+        }
+
+        function filterMembers() {
+            const searchTerm = document.getElementById('memberSearchInput').value.toLowerCase();
+            const memberCards = document.querySelectorAll('#dashboardCurrentMembers .member-card');
+            
+            memberCards.forEach(card => {
+                const name = card.getAttribute('data-member-name');
+                const email = card.getAttribute('data-member-email');
+                const role = card.getAttribute('data-member-role');
+                
+                if (name.includes(searchTerm) || email.includes(searchTerm) || role.includes(searchTerm)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function toggleAgendaSection() {
+            const section = document.getElementById('agendaEditorSection');
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                populateDashboardMeetingSelector();
+                section.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                section.style.display = 'none';
+            }
+        }
+
+        async function loadDashboardAgenda() {
+            const select = document.getElementById('dashboardMeetingSelect');
+            const selectedMeetingId = select.value;
+            
+            if (!selectedMeetingId) {
+                document.getElementById('dashboardAgendaDisplay').innerHTML = '<p style="text-align: center; color: #666;">Select a meeting to edit its agenda.</p>';
+                return;
+            }
+            
+            const meeting = meetings[selectedMeetingId];
+            window.selectedMeetingId = selectedMeetingId; // Set global for admin edit functions
+            
+            document.getElementById('dashboardAgendaDisplay').innerHTML = `
+                <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <h4 style="color: #1976d2; margin-bottom: 0.5rem;">
+                        Editing: ${meeting.date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                        <span class="meeting-type-badge ${meeting.type.replace('-', '')}">${meeting.type.toUpperCase()}</span>
+                    </h4>
+                    <p style="color: #666; margin: 0;">Click any assignment to edit it directly. Changes are saved automatically.</p>
+                </div>
+                
+                ${generateAgendaHTML(meeting)}
+            `;
+        }
+
+        // Helper functions
+        function showRoleGuides() {
+            alert('Role guides feature coming soon! Please contact the VP Education for role instructions.');
+        }
+
+        // Add new member functions
+        async function addNewMember() {
+            const name = document.getElementById('newMemberName').value.trim();
+            const email = document.getElementById('newMemberEmail').value.trim();
+            const password = document.getElementById('newMemberPassword').value.trim();
+            const role = document.getElementById('newMemberRole').value;
+            
+            if (!name || !email || !password) {
+                alert('Please fill in all fields.');
+                return;
+            }
+            
+            try {
+                await apiClient.addMember({
+                    name,
+                    email,
+                    password,
+                    role
+                });
+                
+                document.getElementById('newMemberName').value = '';
+                document.getElementById('newMemberEmail').value = '';
+                document.getElementById('newMemberPassword').value = '';
+                document.getElementById('newMemberRole').value = 'member';
+                
+                alert(`${name} has been added to the club! Password: ${password}`);
+                showMemberManagement(); // Refresh
+            } catch (error) {
+                alert('Failed to add member. Email may already exist.');
+            }
+        }
+
+        async function addDashboardMember() {
+            const name = document.getElementById('dashboardNewMemberName').value.trim();
+            const email = document.getElementById('dashboardNewMemberEmail').value.trim();
+            const password = document.getElementById('dashboardNewMemberPassword').value.trim();
+            const role = document.getElementById('dashboardNewMemberRole').value;
+            
+            if (!name || !email || !password) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            try {
+                await apiClient.addMember({
+                    name,
+                    email,
+                    password,
+                    role
+                });
+                
+                // Clear form
+                document.getElementById('dashboardNewMemberName').value = '';
+                document.getElementById('dashboardNewMemberEmail').value = '';
+                document.getElementById('dashboardNewMemberPassword').value = '';
+                document.getElementById('dashboardNewMemberRole').value = 'member';
+                
+                alert(`${name} has been added to the club!\nEmail: ${email}\nPassword: ${password}`);
+                toggleMemberSection(); // Refresh
+                setTimeout(() => toggleMemberSection(), 100); // Re-open
+                refreshEmailRoster();
+            } catch (error) {
+                alert('Failed to add member. Email may already exist.');
+            }
+        }
+
+        // Application management
+        async function approveApplication(appId) {
+            if (!confirm('Approve this application?')) return;
+            
+            try {
+                await apiClient.updateApplicationStatus(appId, 'approved');
+                alert(`Application approved!`);
+                showMemberManagement(); // Refresh
+            } catch (error) {
+                alert('Failed to approve application.');
+            }
+        }
+
+        async function dashboardApproveApplication(appId) {
+            if (!confirm('Approve this application?')) return;
+            
+            try {
+                await apiClient.updateApplicationStatus(appId, 'approved');
+                alert(`Application approved!`);
+                toggleMemberSection(); // Refresh
+                setTimeout(() => toggleMemberSection(), 100); // Re-open
+                refreshEmailRoster();
+            } catch (error) {
+                alert('Failed to approve application.');
+            }
+        }
+
+        async function rejectApplication(appId) {
+            if (!confirm('Reject this application?')) return;
+            
+            try {
+                await apiClient.updateApplicationStatus(appId, 'rejected');
+                alert('Application rejected.');
+                showMemberManagement(); // Refresh
+            } catch (error) {
+                alert('Failed to reject application.');
+            }
+        }
+
+        async function dashboardRejectApplication(appId) {
+            if (!confirm('Reject this application?')) return;
+            
+            try {
+                await apiClient.updateApplicationStatus(appId, 'rejected');
+                alert('Application rejected.');
+                toggleMemberSection(); // Refresh
+                setTimeout(() => toggleMemberSection(), 100); // Re-open
+            } catch (error) {
+                alert('Failed to reject application.');
+            }
+        }
+
+        async function removeMember(memberId) {
+            if (!confirm('Remove this member? This action cannot be undone.')) return;
+            
+            try {
+                await apiClient.removeMember(memberId);
+                alert('Member removed successfully.');
+                showMemberManagement(); // Refresh
+            } catch (error) {
+                alert('Failed to remove member.');
+            }
+        }
+
+        async function dashboardRemoveMember(memberId) {
+            if (!confirm('Remove this member? This action cannot be undone.')) return;
+            
+            try {
+                await apiClient.removeMember(memberId);
+                alert('Member removed successfully.');
+                toggleMemberSection(); // Refresh
+                setTimeout(() => toggleMemberSection(), 100); // Re-open
+                refreshEmailRoster();
+            } catch (error) {
+                alert('Failed to remove member.');
+            }
+        }
+
+        // Load meeting roles
+        async function loadMeetingRoles() {
+            const rolesContent = document.getElementById('rolesContent');
+            if (!rolesContent) return;
+            
+            const nextMeeting = Object.entries(meetings).sort((a, b) => a[1].date - b[1].date)[0];
+            if (!nextMeeting) {
+                rolesContent.innerHTML = '<p>No upcoming meetings scheduled.</p>';
+                return;
+            }
+            
+            const [meetingId, meeting] = nextMeeting;
+            document.getElementById('nextMeetingDate').textContent = meeting.date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
+                day: 'numeric',
+                year: 'numeric'
+            });
+            
+            rolesContent.innerHTML = `
+                <div class="roles-grid">
+                    <div class="role-card">
+                        <h3>Toastmaster of the Evening</h3>
+                        <p>Lead the entire meeting, introduce speakers, and maintain the flow of the program.</p>
+                        <div class="role-assignment">
+                            <span class="assigned">${meeting.roles['toastmaster-of-the-evening'] || meeting.roles.toastmaster || 'Available'}</span>
+                            ${!(meeting.roles['toastmaster-of-the-evening'] || meeting.roles.toastmaster) ? 
+                                `<button onclick="signUpForRoleFromRolesPage('${meetingId}', 'toastmaster')">Sign Up</button>` : 
+                                ((meeting.roles['toastmaster-of-the-evening'] || meeting.roles.toastmaster) === currentUser.name ? 
+                                    `<button class="remove-button" onclick="removeRoleFromRolesPage('${meetingId}', 'toastmaster')">Remove</button>` : '')}
+                        </div>
+                    </div>
+
+                    <div class="role-card">
+                        <h3>General Evaluator</h3>
+                        <p>Oversee the evaluation portion of the meeting and provide overall meeting feedback.</p>
+                        <div class="role-assignment">
+                            <span class="assigned">${meeting.roles['general-evaluator'] || meeting.roles.evaluator || 'Available'}</span>
+                            ${!(meeting.roles['general-evaluator'] || meeting.roles.evaluator) ? 
+                                `<button onclick="signUpForRoleFromRolesPage('${meetingId}', 'evaluator')">Sign Up</button>` : 
+                                ((meeting.roles['general-evaluator'] || meeting.roles.evaluator) === currentUser.name ? 
+                                    `<button class="remove-button" onclick="removeRoleFromRolesPage('${meetingId}', 'evaluator')">Remove</button>` : '')}
+                        </div>
+                    </div>
+
+                    <div class="role-card">
+                        <h3>Table Topics Master</h3>
+                        <p>Conduct the impromptu speaking portion with engaging questions and topics.</p>
+                        <div class="role-assignment">
+                            <span class="assigned">${meeting.roles['table-topics-master'] || meeting.roles.topics || 'Available'}</span>
+                            ${!(meeting.roles['table-topics-master'] || meeting.roles.topics) ? 
+                                `<button onclick="signUpForRoleFromRolesPage('${meetingId}', 'topics')">Sign Up</button>` : 
+                                ((meeting.roles['table-topics-master'] || meeting.roles.topics) === currentUser.name ? 
+                                    `<button class="remove-button" onclick="removeRoleFromRolesPage('${meetingId}', 'topics')">Remove</button>` : '')}
+                        </div>
+                    </div>
+
+                    <div class="role-card">
+                        <h3>Timer</h3>
+                        <p>Keep track of all speech and evaluation times throughout the meeting.</p>
+                        <div class="role-assignment">
+                            <span class="assigned">${meeting.roles.timer || 'Available'}</span>
+                            ${!meeting.roles.timer ? 
+                                `<button onclick="signUpForRoleFromRolesPage('${meetingId}', 'timer')">Sign Up</button>` : 
+                                (meeting.roles.timer === currentUser.name ? 
+                                    `<button class="remove-button" onclick="removeRoleFromRolesPage('${meetingId}', 'timer')">Remove</button>` : '')}
+                        </div>
+                    </div>
+
+                    <div class="role-card">
+                        <h3>Ah Counter/Grammarian</h3>
+                        <p>Track filler words and monitor grammar usage throughout the meeting.</p>
+                        <div class="role-assignment">
+                            <span class="assigned">${meeting.roles['ah-counter-grammarian'] || meeting.roles['ah-counter/grammarian'] || 'Available'}</span>
+                            ${!(meeting.roles['ah-counter-grammarian'] || meeting.roles['ah-counter/grammarian']) ? 
+                                `<button onclick="signUpForRoleFromRolesPage('${meetingId}', 'ah-counter-grammarian')">Sign Up</button>` : 
+                                ((meeting.roles['ah-counter-grammarian'] || meeting.roles['ah-counter/grammarian']) === currentUser.name ? 
+                                    `<button class="remove-button" onclick="removeRoleFromRolesPage('${meetingId}', 'ah-counter-grammarian')">Remove</button>` : '')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function signUpForRoleFromRolesPage(meetingId, roleId) {
+            try {
+                await apiClient.signUpForRole(meetingId, roleId);
+                await initializeMeetings();
+                loadMeetingRoles();
+                alert('Successfully signed up for role!');
+            } catch (error) {
+                alert('Failed to sign up for role. Please try again.');
+            }
+        }
+
+        async function removeRoleFromRolesPage(meetingId, roleId) {
+            try {
+                await apiClient.removeRole(meetingId, roleId);
+                await initializeMeetings();
+                loadMeetingRoles();
+                alert('Role assignment removed successfully.');
+            } catch (error) {
+                alert('Failed to remove role assignment.');
+            }
+        }
+
+        // Load club officers (static for now)
+        function loadClubOfficers() {
+            const officersEl = document.getElementById('clubOfficers');
+            if (officersEl) {
+                officersEl.innerHTML = `
+                    <strong>President:</strong> Sarah Johnson<br>
+                    <strong>VP Education:</strong> Michael Chen<br>
+                    <strong>VP Membership:</strong> Lisa Davis<br>
+                    <strong>VP Public Relations:</strong> James Wilson<br>
+                    <strong>Secretary:</strong> Emily Brown<br>
+                    <strong>Treasurer:</strong> Robert Martinez<br>
+                    <strong>Sergeant at Arms:</strong> Jennifer Taylor
+                `;
+            }
+        }
+
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', async () => {
+            console.log('Page loaded, initializing...');
+            
+            // Check for existing auth
+            const savedUser = await apiClient.verifyToken();
+            if (savedUser) {
+                currentUser = savedUser;
+                updateAuthDisplay();
+            }
+            // Initialize meetings for everyone (including visitors)
+            await initializeMeetings();
+              
+            // Load static content
+            loadClubOfficers();
+            
+            // Show home section by default
+            showSection('home');
+        });
+
+        // Handle modal clicks
+        window.onclick = function(event) {
+            const modal = document.getElementById('speechModal');
+            if (event.target === modal) {
+                closeSpeechModal();
+            }
+        };
+    </script>
+</body>
+</html>
