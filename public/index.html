@@ -2953,7 +2953,14 @@
             const rolesContent = document.getElementById('rolesContent');
             if (!rolesContent) return;
             
-            const nextMeeting = Object.entries(meetings).sort((a, b) => a[1].date - b[1].date)[0];
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            const futureMeetings = Object.entries(meetings)
+                .filter(([id, meeting]) => meeting.date >= today)
+                .sort((a, b) => a[1].date - b[1].date);
+
+            const nextMeeting = futureMeetings[0];
             if (!nextMeeting) {
                 rolesContent.innerHTML = '<p>No upcoming meetings scheduled.</p>';
                 return;
@@ -2971,7 +2978,19 @@
                 <div class="roles-grid">
                     <div class="role-card">
                         <h3>Toastmaster of the Evening</h3>
-                        <p>Lead the entire meeting, introduce speakers, and maintain the flow of the program.</p>
+                        <b>The Toastmaster is the meeting's director and host.</b>
+                        <br><br>
+                        <p>Taking on this role improves:<br>
+                        <ul style="padding-left: 40px;">
+                          <li>Organization</li>
+                          <li>Time Management</li>
+                          <li>Public Speaking Skills</li>
+                        </ul>                                     
+
+                           <br>
+                           A member typically will not be assigned this role until they are thoroughly familiar with the club and its procedures.</p><br>
+			<p> Find out more here:<br>
+                        <a href="https://www.toastmasters.org/membership/club-meeting-roles/toastmaster"> Learn more about being a Toastmaster! </a>
                         <div class="role-assignment">
                             <span class="assigned">${meeting.roles['toastmaster-of-the-evening'] || meeting.roles.toastmaster || 'Available'}</span>
                             ${!(meeting.roles['toastmaster-of-the-evening'] || meeting.roles.toastmaster) ? 
