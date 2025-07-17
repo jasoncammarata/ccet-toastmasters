@@ -1,5 +1,6 @@
 const db = require('../../lib/db');
 const { authMiddleware } = require('../../lib/auth');
+const bcrypt = require('bcryptjs');
 
 module.exports = authMiddleware(async (req, res) => {
   const { id } = req.query;
@@ -27,7 +28,7 @@ module.exports = authMiddleware(async (req, res) => {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
-    const { name, email, role } = req.body;
+    const { name, email, role, password } = req.body;
 
     try {
       const updates = [];
@@ -40,6 +41,12 @@ module.exports = authMiddleware(async (req, res) => {
       if (email) {
         updates.push('email = ?');
         values.push(email);
+      }
+      if (password) {
+        const bcrypt = require('bcryptjs');
+        const hashedPassword = bcrypt.hashSync(password, 10);
+        updates.push('password = ?');
+        values.push(hashedPassword);
       }
       if (role && req.user.role === 'admin') {
         updates.push('role = ?');

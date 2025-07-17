@@ -261,6 +261,13 @@ class ApiClient {
         });
     }
 
+    async updateMemberPassword(memberId, newPassword) {
+        return this.request(`/members/[id]?id=${memberId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ password: newPassword })
+        });
+    }
+
     // Application management - Require auth
     async getApplications() {
         return this.request('/applications/index');

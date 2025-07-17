@@ -2404,9 +2404,10 @@
                                     </div>
                                 </div>
                                 <div class="member-actions">
-                                    ${member.email !== 'CCET_Admin' ? 
-                                        `<button class="remove-button-admin" onclick="removeMember(${member.id})">Remove</button>` : 
-                                        '<span style="color: #666; font-size: 0.85rem;">Protected</span>'}
+				    ${member.email !== 'CCET_Admin' ?
+				        `<button class="btn-primary" style="margin-right: 10px;" onclick="changePassword(${member.id}, '${member.name}')">Change Password</button>
+				         <button class="remove-button-admin" onclick="dashboardRemoveMember(${member.id})">Remove</button>` :
+				        '<span style="color: #666; font-size: 0.85rem;">Protected</span>'}
                                 </div>
                             </div>
                         `).join('')}
@@ -2945,6 +2946,23 @@
                 refreshEmailRoster();
             } catch (error) {
                 alert('Failed to remove member.');
+            }
+        }
+
+	async function changePassword(memberId, memberName) {
+            const newPassword = prompt(`Enter new password for ${memberName}:`);
+            if (!newPassword) return;
+            
+            if (newPassword.length < 6) {
+                alert('Password must be at least 6 characters long.');
+                return;
+            }
+            
+            try {
+                await apiClient.updateMemberPassword(memberId, newPassword);
+                alert('Password updated successfully.');
+            } catch (error) {
+                alert('Failed to update password.');
             }
         }
 
