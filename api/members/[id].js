@@ -3,7 +3,7 @@ const { authMiddleware } = require('../../lib/auth');
 const bcrypt = require('bcryptjs');
 
 module.exports = authMiddleware(async (req, res) => {
-  const { id } = req.query;
+  const { id } = req.params;
 
   if (!id) {
     return res.status(400).json({ error: 'Member ID required' });
@@ -15,6 +15,10 @@ module.exports = authMiddleware(async (req, res) => {
     }
 
     try {
+      // Delete related records first
+      db.prepare('DELETE FROM speeches WHERE speaker_id = ? OR evaluator_id = ?').run(id, id);
+      db.prepare('DELETE FROM meeting_roles WHERE member_id = ?').run(id);
+      // Then delete the member
       db.prepare('DELETE FROM members WHERE id = ?').run(id);
       res.json({ success: true });
     } catch (error) {
