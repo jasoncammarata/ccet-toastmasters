@@ -37,6 +37,7 @@ app.all('/api/meetings/speeches', convertHandler(require('./api/meetings/speeche
 app.all('/api/meetings/evaluators', convertHandler(require('./api/meetings/evaluators')));
 
 app.all('/api/members/index', convertHandler(require('./api/members/index')));
+app.all('/api/members/:id', convertHandler(require('./api/members/[id]')));
 app.all('/api/applications/index', convertHandler(require('./api/applications/index')));
 
 // Catch all route - must be last

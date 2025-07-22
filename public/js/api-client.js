@@ -256,13 +256,13 @@ class ApiClient {
     }
 
     async removeMember(memberId) {
-        return this.request(`/members/[id]?id=${memberId}`, {
+        return this.request(`/members/${memberId}`, {
             method: 'DELETE'
         });
     }
 
     async updateMemberPassword(memberId, newPassword) {
-        return this.request(`/members/[id]?id=${memberId}`, {
+        return this.request(`/members/${memberId}`, {
             method: 'PUT',
             body: JSON.stringify({ password: newPassword })
         });
