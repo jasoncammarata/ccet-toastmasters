@@ -5,7 +5,7 @@ module.exports = async (req, res) => {
   if (req.method === 'GET') {
     // Allow anyone to view evaluators - no auth required
     const { meetingId } = req.query;
-
+    
     if (!meetingId) {
       return res.status(400).json({ error: 'Meeting ID required' });
     }
@@ -13,13 +13,13 @@ module.exports = async (req, res) => {
     try {
       const evaluators = db.prepare(`
         SELECT
-          s.id as speech_id,
-          s.evaluator_id,
-          m.name as evaluator_name
-        FROM speeches s
-        LEFT JOIN members m ON s.evaluator_id = m.id
-        WHERE s.meeting_id = ?
-        ORDER BY s.id
+          e.slot_number,
+          e.member_id,
+          m.name as user_name
+        FROM evaluators e
+        LEFT JOIN members m ON e.member_id = m.id
+        WHERE e.meeting_id = ?
+        ORDER BY e.slot_number
       `).all(meetingId);
 
       res.json(evaluators);
@@ -28,71 +28,80 @@ module.exports = async (req, res) => {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
-  else if (req.method === 'PUT' || req.method === 'DELETE') {
-    // Require auth for modifying evaluators
+  else if (req.method === 'PUT' || req.method === 'POST') {
+    // Require auth for adding/updating evaluators
     authMiddleware(async (req, res) => {
-      if (req.method === 'PUT') {
-        const { speechId, evaluatorId, evaluatorName } = req.body;
+      const { meetingId, slotNumber, evaluatorId, evaluatorName } = req.body;
 
-        if (!speechId) {
-          return res.status(400).json({ error: 'Speech ID required' });
-        }
-
-        try {
-          let actualEvaluatorId = evaluatorId;
-
-          // If evaluatorName is provided instead of evaluatorId (for admin edits)
-          if (!evaluatorId && evaluatorName) {
-            const member = db.prepare('SELECT id FROM members WHERE name = ?').get(evaluatorName);
-            if (member) {
-              actualEvaluatorId = member.id;
-            } else {
-              // Create a temporary member entry for non-members
-              const result = db.prepare(`
-                INSERT INTO members (name, email, password, role)
-                VALUES (?, ?, ?, ?)
-              `).run(evaluatorName, `${evaluatorName.toLowerCase().replace(/\s+/g, '.')}@temp.com`, 'temp', 'guest');
-              actualEvaluatorId = result.lastInsertRowid;
-            }
-          }
-
-          db.prepare(`
-            UPDATE speeches 
-            SET evaluator_id = ? 
-            WHERE id = ?
-          `).run(actualEvaluatorId, speechId);
-
-          res.json({ success: true, evaluatorId: actualEvaluatorId });
-        } catch (error) {
-          console.error('Update evaluator error:', error);
-          res.status(500).json({ error: 'Internal server error' });
-        }
+      if (!meetingId || slotNumber === undefined) {
+        return res.status(400).json({ error: 'Meeting ID and slot number required' });
       }
-      else if (req.method === 'DELETE') {
-        const { meetingId, slotNumber } = req.body;
 
-        if (!meetingId || slotNumber === undefined) {
-          return res.status(400).json({ error: 'Meeting ID and slot number required' });
-        }
+      try {
+        let actualEvaluatorId = evaluatorId;
 
-        try {
-          // Get speeches for this meeting ordered by ID
-          const speeches = db.prepare(`
-            SELECT id FROM speeches 
-            WHERE meeting_id = ? 
-            ORDER BY id
-          `).all(meetingId);
-
-          if (speeches[slotNumber]) {
-            db.prepare('UPDATE speeches SET evaluator_id = NULL WHERE id = ?').run(speeches[slotNumber].id);
-            res.json({ success: true });
+        // If evaluatorName is provided instead of evaluatorId (for admin edits)
+        if (!evaluatorId && evaluatorName) {
+          const member = db.prepare('SELECT id FROM members WHERE name = ?').get(evaluatorName);
+          if (member) {
+            actualEvaluatorId = member.id;
           } else {
-            res.status(404).json({ error: 'Speech not found' });
+            // Create a temporary member entry for non-members
+            const result = db.prepare(`
+              INSERT INTO members (name, email, password, role)
+              VALUES (?, ?, ?, ?)
+            `).run(evaluatorName, `${evaluatorName.toLowerCase().replace(/\s+/g, '.')}@temp.com`, 'temp', 'guest');
+            actualEvaluatorId = result.lastInsertRowid;
           }
-        } catch (error) {
-          console.error('Delete evaluator error:', error);
-          res.status(500).json({ error: 'Internal server error' });
         }
+
+        // Check if slot already exists
+        const existing = db.prepare(`
+          SELECT id FROM evaluators 
+          WHERE meeting_id = ? AND slot_number = ?
+        `).get(meetingId, slotNumber);
+
+        if (existing) {
+          // Update existing slot
+          db.prepare(`
+            UPDATE evaluators
+            SET member_id = ?
+            WHERE meeting_id = ? AND slot_number = ?
+          `).run(actualEvaluatorId, meetingId, slotNumber);
+        } else {
+          // Insert new slot
+          db.prepare(`
+            INSERT INTO evaluators (meeting_id, slot_number, member_id)
+            VALUES (?, ?, ?)
+          `).run(meetingId, slotNumber, actualEvaluatorId);
+        }
+
+        res.json({ success: true, evaluatorId: actualEvaluatorId });
+      } catch (error) {
+        console.error('Update evaluator error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    })(req, res);
+  }
+  else if (req.method === 'DELETE') {
+    // Require auth for removing evaluators
+    authMiddleware(async (req, res) => {
+      const { meetingId, slotNumber } = req.body;
+
+      if (!meetingId || slotNumber === undefined) {
+        return res.status(400).json({ error: 'Meeting ID and slot number required' });
+      }
+
+      try {
+        db.prepare(`
+          DELETE FROM evaluators
+          WHERE meeting_id = ? AND slot_number = ?
+        `).run(meetingId, slotNumber);
+
+        res.json({ success: true });
+      } catch (error) {
+        console.error('Delete evaluator error:', error);
+        res.status(500).json({ error: 'Internal server error' });
       }
     })(req, res);
   }

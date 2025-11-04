@@ -142,11 +142,9 @@ class ApiClient {
                 project: speech.speech_project || 'TBD'
             }));
 
-            // Get evaluators (from speeches data)
-            const evaluatorList = speeches.map((speech, index) => ({
-                slot_number: index,
-                user_name: speech.evaluator_name
-            })).filter(e => e.user_name);
+            // Get evaluators - no auth required
+            const evaluatorsResponse = await fetch(`${this.baseUrl}/meetings/evaluators?meetingId=${meetingId}`);
+            const evaluatorList = evaluatorsResponse.ok ? await evaluatorsResponse.json() : [];
 
             return { roles: roleMap, speeches: speechList, evaluators: evaluatorList };
         } catch (error) {
@@ -188,21 +186,16 @@ class ApiClient {
     }
 
     async signUpForEvaluator(meetingId, slotNumber) {
-        // First get the speech at this slot
-        const speeches = await fetch(`${this.baseUrl}/meetings/speeches?meetingId=${meetingId}`).then(r => r.json());
-        const speech = speeches[slotNumber];
-
-        if (speech) {
-            return this.request('/meetings/evaluators', {
-                method: 'PUT',
-                body: JSON.stringify({
-                    speechId: speech.id,
-                    evaluatorId: this.user.id
-                })
-            });
-        }
-        throw new Error('No speech found for this evaluator slot');
+        return this.request('/meetings/evaluators', {
+            method: 'POST',
+            body: JSON.stringify({
+                meetingId,
+                slotNumber,
+                evaluatorId: this.user.id
+            })
+        });
     }
+    
 
     // Remove assignments - Require auth
     async removeRole(meetingId, roleType) {

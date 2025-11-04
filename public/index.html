@@ -1807,9 +1807,9 @@
                     });
                     
                     // Fill evaluators array  
-                    details.evaluators?.forEach((evaluator, index) => {
-                        if (index < 4) {
-                            meetings[meeting.id].evaluators[index] = evaluator.user_name;
+                    details.evaluators?.forEach((evaluator) => {
+    			if (evaluator.slot_number >= 0 && evaluator.slot_number < 4) {
+        			meetings[meeting.id].evaluators[evaluator.slot_number] = evaluator.user_name;
                         }
                     });
                 }
