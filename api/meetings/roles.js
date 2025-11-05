@@ -16,6 +16,7 @@ module.exports = async (req, res) => {
           mr.id,
           mr.role_name,
           mr.member_id,
+          mr.word_of_the_day,
           m.name as member_name
         FROM meeting_roles mr
         LEFT JOIN members m ON mr.member_id = m.id
@@ -28,11 +29,11 @@ module.exports = async (req, res) => {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
-  else if (req.method === 'POST' || req.method === 'DELETE') {
+  else if (req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE') {
     // Require auth for modifying roles
     authMiddleware(async (req, res) => {
       if (req.method === 'POST') {
-        const { meetingId, roleName, memberId } = req.body;
+        const { meetingId, roleName, memberId, wordOfTheDay } = req.body;
 
         if (!meetingId || !roleName) {
           return res.status(400).json({ error: 'Meeting ID and role name required' });
@@ -47,10 +48,10 @@ module.exports = async (req, res) => {
 
           // Then insert the new assignment if memberId is provided
           if (memberId) {
-            const result = db.prepare(`
-              INSERT INTO meeting_roles (meeting_id, role_name, member_id)
-              VALUES (?, ?, ?)
-            `).run(meetingId, roleName, memberId);
+          const result = db.prepare(`
+              INSERT INTO meeting_roles (meeting_id, role_name, member_id, word_of_the_day)
+              VALUES (?, ?, ?, ?)
+            `).run(meetingId, roleName, memberId, wordOfTheDay || null);
 
             res.json({
               id: result.lastInsertRowid,
@@ -66,6 +67,34 @@ module.exports = async (req, res) => {
           res.status(500).json({ error: 'Internal server error' });
         }
       }
+
+      else if (req.method === 'PUT') {
+        const { meetingId, roleType, wordOfTheDay } = req.body;
+        
+        if (!meetingId || !roleType) {
+          return res.status(400).json({ error: 'Meeting ID and role type required' });
+        }
+        
+        try {
+          // Map roleType to roleName
+          const roleNames = {
+            'ah-counter-grammarian': 'Ah-Counter/Grammarian'
+          };
+          const roleName = roleNames[roleType] || roleType;
+          
+          db.prepare(`
+            UPDATE meeting_roles
+            SET word_of_the_day = ?
+            WHERE meeting_id = ? AND role_name = ?
+          `).run(wordOfTheDay || null, meetingId, roleName);
+          
+          res.json({ success: true });
+        } catch (error) {
+          console.error('Update word error:', error);
+          res.status(500).json({ error: 'Internal server error' });
+        }
+      }
+
       else if (req.method === 'DELETE') {
         const { meetingId, roleType } = req.body;
 

@@ -987,6 +987,21 @@
         </div>
     </div>
 
+    <!-- Word of the Day Modal -->
+    <div id="wordModal" class="modal">
+        <div class="modal-content">
+            <h3>📖 Word of the Day</h3>
+            <div class="form-group">
+                <label for="wordOfTheDay">Word of the Day:</label>
+                <input type="text" id="wordOfTheDay" placeholder="Enter the word of the day">
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel" onclick="closeWordModal()">Cancel</button>
+                <button class="confirm" onclick="confirmWordSignup()">Sign Up</button>
+            </div>
+        </div>
+    </div>
+
     <main class="container">
         <!-- All sections remain the same as original HTML -->
         <!-- Home Section -->
@@ -1993,7 +2008,7 @@
                         </div>
                         ${generateAgendaLine('Toastmaster of the Evening', meeting.roles['toastmaster-of-the-evening'] || meeting.roles.toastmaster, 'toastmaster')}
                         ${generateAgendaLine('General Evaluator', meeting.roles['general-evaluator'] || meeting.roles.evaluator, 'evaluator')}
-                        ${generateAgendaLine('Ah-Counter/Grammarian', meeting.roles['ah-counter-grammarian'] || meeting.roles['ah-counter/grammarian'], 'ah-counter-grammarian')}
+                        ${generateAgendaLine('Ah-Counter/Grammarian', meeting.roles['ah-counter-grammarian'] || meeting.roles['ah-counter/grammarian'], 'ah-counter-grammarian', meeting)}
                         ${generateAgendaLine('Timer', meeting.roles.timer, 'timer')}
                         
                         <div class="agenda-line section-header">
@@ -2024,6 +2039,15 @@
             }
             
             const meeting = meetings[selectedMeetingId];
+            // Helper to extract role name
+            const getRoleName = (role) => {
+                if (!role) return 'Available';
+                return typeof role === 'object' ? (role.name || 'Available') : role;
+            };
+            
+            // Get word of the day
+            const ahCounterRole = meeting.roles['ah-counter-grammarian'] || meeting.roles['ah-counter/grammarian'];
+            const wordOfTheDay = ahCounterRole && typeof ahCounterRole === 'object' ? ahCounterRole.wordOfTheDay : null;
             
             // Generate presentation HTML
             const presentationHTML = `
@@ -2103,34 +2127,48 @@
     <div class="header">
         ${meeting.date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} | ${meeting.type === 'in-person' ? 'In-Person' : 'Virtual'}
     </div>
-    
+   
     <div class="leadership-row">
         <div class="role-item">
             <div class="role-title">Toastmaster</div>
-            <div class="role-name">${meeting.roles['toastmaster-of-the-evening'] || meeting.roles.toastmaster || 'Available'}</div>
+            <div class="role-name">${getRoleName(meeting.roles['toastmaster-of-the-evening'] || meeting.roles.toastmaster)}</div>
         </div>
         <div class="role-item">
             <div class="role-title">General Evaluator</div>
-            <div class="role-name">${meeting.roles['general-evaluator'] || meeting.roles.evaluator || 'Available'}</div>
+            <div class="role-name">${getRoleName(meeting.roles['general-evaluator'] || meeting.roles.evaluator)}</div>
         </div>
         <div class="role-item">
             <div class="role-title">Ah-Counter/Grammarian</div>
-            <div class="role-name">${meeting.roles['ah-counter-grammarian'] || meeting.roles['ah-counter/grammarian'] || 'Available'}</div>
+            <div class="role-name">${getRoleName(meeting.roles['ah-counter-grammarian'] || meeting.roles['ah-counter/grammarian'])}</div>
         </div>
         <div class="role-item">
             <div class="role-title">Timer</div>
-            <div class="role-name">${meeting.roles.timer || 'Available'}</div>
+            <div class="role-name">${getRoleName(meeting.roles.timer)}</div>
         </div>
         <div class="role-item">
             <div class="role-title">Table Topics</div>
-            <div class="role-name">${meeting.roles['table-topics-master'] || meeting.roles.topics || 'Available'}</div>
+            <div class="role-name">${getRoleName(meeting.roles['table-topics-master'] || meeting.roles.topics)}</div>
         </div>
     </div>
-    
+
     <div class="speeches-section">
         ${generatePresentationSpeeches(meeting)}
     </div>
+    
+    ${wordOfTheDay ? `
+    <div style="text-align: center; margin-top: 3rem; padding: 2rem; background: #fff3cd; border-radius: 8px; border: 3px solid #ffc107;">
+        <div style="font-size: 1.5rem; font-weight: bold; color: #856404; margin-bottom: 1rem;">
+            ⭐ Word of the Day ⭐
+        </div>
+        <div style="font-size: 2.5rem; font-weight: bold;">
+            <a href="https://www.google.com/search?q=define+${encodeURIComponent(wordOfTheDay)}" target="_blank" style="color: #1976d2; text-decoration: none;">
+                ${wordOfTheDay}
+            </a>
+        </div>
+    </div>
+    ` : ''}
 </body>
+
 </html>
             `;
             
@@ -2169,31 +2207,51 @@
             return html || '<div style="text-align: center; padding: 2rem; color: #666;">No speeches scheduled yet</div>';
         }
 
-        function generateAgendaLine(role, assignment, roleId) {
+        function generateAgendaLine(role, assignment, roleId, meeting = null) {
+            // Extract name from object if needed
+            let assignmentName = assignment;
+            let wordOfTheDay = null;
+            
+            if (assignment && typeof assignment === 'object') {
+                assignmentName = assignment.name;
+                wordOfTheDay = assignment.wordOfTheDay;
+            }
+            
             let roleDisplay = `<span class="agenda-role">${role}: `;
-            if (assignment) {
-                roleDisplay += `<span class="assignment-name">${assignment}</span>`;
+            if (assignmentName) {
+                roleDisplay += `<span class="assignment-name">${assignmentName}</span>`;
             } else {
                 roleDisplay += `<span class="assignment-empty">Available</span>`;
             }
             roleDisplay += `</span>`;
             
+            // Add word of the day for ah-counter (visible to everyone)
+            if (roleId === 'ah-counter-grammarian' && wordOfTheDay) {
+                roleDisplay += `<span class="word-of-day" style="margin-left: 1rem;">Word of the Day: <strong><a href="https://www.google.com/search?q=define+${encodeURIComponent(wordOfTheDay)}" target="_blank" style="color: #1976d2; text-decoration: none;">${wordOfTheDay}</a></strong></span>`;
+            }
+            
             let actionButton = '';
             if (currentUser) {
                 if (currentUser.isAdmin) {
-                    if (assignment) {
+                    if (assignmentName) {
                         actionButton = `<button class="admin-edit-button" onclick="adminEditRole('${roleId}', '${role}')">Edit</button>`;
                     } else {
                         actionButton = `<button class="signup-button" onclick="signUpForRole('${roleId}', '${role}')">Sign Up</button>`;
                     }
                 } else {
-                    if (assignment && assignment === currentUser.name) {
-                        actionButton = `<button class="remove-button" onclick="removeRoleAssignment('${roleId}')">Remove</button>`;
-                    } else if (!assignment) {
+                    if (assignmentName && assignmentName === currentUser.name) {
+                        // Add edit word button for ah-counter
+                        if (roleId === 'ah-counter-grammarian') {
+                            actionButton = `<button class="edit-button" onclick="editWordOfTheDay()">Edit Word</button>
+                                          <button class="remove-button" onclick="removeRoleAssignment('${roleId}')">Remove</button>`;
+                        } else {
+                            actionButton = `<button class="remove-button" onclick="removeRoleAssignment('${roleId}')">Remove</button>`;
+                        }
+                    } else if (!assignmentName) {
                         actionButton = `<button class="signup-button" onclick="signUpForRole('${roleId}', '${role}')">Sign Up</button>`;
                     }
                 }
-            } else if (!assignment) {
+            } else if (!assignmentName) {
                 actionButton = `<button class="signup-button" disabled title="Member login required">Sign Up</button>`;
             }
             
@@ -2328,7 +2386,67 @@
             } catch (error) {
                 alert(isEditMode ? 'Failed to update speech. Please try again.' : 'Failed to sign up for speech. Please try again.');
             }
-        }        
+        }     
+
+        // Word of the Day Modal Functions
+        let currentWordRole = null;
+        
+        function showWordModal() {
+            document.getElementById('wordOfTheDay').value = '';
+            document.getElementById('wordModal').style.display = 'block';
+            document.getElementById('wordOfTheDay').focus();
+        }
+        
+        function closeWordModal() {
+            document.getElementById('wordModal').style.display = 'none';
+            currentWordRole = null;
+            isEditMode = false;
+        }
+        
+        async function confirmWordSignup() {
+            const word = document.getElementById('wordOfTheDay').value.trim();
+            
+            try {
+                if (isEditMode) {
+                    // Edit existing word
+                    await apiClient.updateWordOfTheDay(selectedMeetingId, word);
+                    closeWordModal();
+                    await initializeMeetings();
+                    alert('Successfully updated word of the day!');
+                } else {
+                    // Sign up with word
+                    await apiClient.signUpForRole(selectedMeetingId, 'ah-counter-grammarian', word);
+                    closeWordModal();
+                    await initializeMeetings();
+                    alert('Successfully signed up for Ah-Counter/Grammarian!');
+                }
+            } catch (error) {
+                alert(isEditMode ? 'Failed to update word of the day.' : 'Failed to sign up. Please try again.');
+            }
+        }
+
+        function editWordOfTheDay() {
+            if (!currentUser) {
+                alert('Please login to edit word of the day.');
+                return;
+            }
+            
+            const meeting = meetings[selectedMeetingId];
+            const ahCounterRole = meeting.roles['ah-counter-grammarian'] || meeting.roles['ah-counter/grammarian'];
+            
+            if (!ahCounterRole || !ahCounterRole.name || ahCounterRole.name !== currentUser.name) {
+                alert('You can only edit your own word of the day.');
+                return;
+            }
+            
+            // Pre-fill the modal with current word
+            document.getElementById('wordOfTheDay').value = ahCounterRole.wordOfTheDay || '';
+            document.getElementById('wordModal').style.display = 'block';
+            document.getElementById('wordOfTheDay').focus();
+            
+            // Change to edit mode
+            isEditMode = true;
+        }
 
         // Meeting Signup Functions
         function signUpForSpeech(slotIndex) {
@@ -2397,10 +2515,15 @@
                 alert('Please login to sign up for roles.');
                 return;
             }
-            
             const meeting = meetings[selectedMeetingId];
             if (meeting.roles[roleId]) {
                 alert('This role is already taken.');
+                return;
+            }
+            
+            // Show word modal for ah-counter/grammarian
+            if (roleId === 'ah-counter-grammarian') {
+                showWordModal();
                 return;
             }
             

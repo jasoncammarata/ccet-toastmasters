@@ -129,7 +129,10 @@ class ApiClient {
             const roleMap = {};
             roles.forEach(role => {
                 const roleType = role.role_name.toLowerCase().replace(/\s+/g, '-');
-                roleMap[roleType] = role.member_name;
+                roleMap[roleType] = {
+                    name: role.member_name,
+                    wordOfTheDay: role.word_of_the_day
+                };
             });
 
             // Get speeches - no auth required
@@ -154,7 +157,7 @@ class ApiClient {
     }
 
     // Sign-up methods - Require auth
-    async signUpForRole(meetingId, roleType) {
+    async signUpForRole(meetingId, roleType, wordOfTheDay = null) {
         const roleNames = {
             'toastmaster': 'Toastmaster of the Evening',
             'evaluator': 'General Evaluator',
@@ -162,14 +165,21 @@ class ApiClient {
             'timer': 'Timer',
             'topics': 'Table Topics Master'
         };
-
+        
+        const body = {
+            meetingId,
+            roleName: roleNames[roleType] || roleType,
+            memberId: this.user.id
+        };
+        
+        // Add word of the day if provided
+        if (wordOfTheDay) {
+            body.wordOfTheDay = wordOfTheDay;
+        }
+        
         return this.request('/meetings/roles', {
             method: 'POST',
-            body: JSON.stringify({
-                meetingId,
-                roleName: roleNames[roleType] || roleType,
-                memberId: this.user.id
-            })
+            body: JSON.stringify(body)
         });
     }
 
@@ -193,6 +203,17 @@ class ApiClient {
                 slotNumber,
                 speechTitle: title,
                 speechProject: project
+            })
+        });
+    }
+
+    async updateWordOfTheDay(meetingId, wordOfTheDay) {
+        return this.request('/meetings/roles', {
+            method: 'PUT',
+            body: JSON.stringify({
+                meetingId,
+                roleType: 'ah-counter-grammarian',
+                wordOfTheDay
             })
         });
     }
