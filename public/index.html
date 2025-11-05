@@ -1333,6 +1333,12 @@
                 </div>
             </div>
 
+            <div style="margin-top: 1rem; text-align: center;">
+                <button onclick="openPresentationMode()" class="btn-primary" style="width: auto; padding: 10px 20px; background: #1976d2;">
+                    📺 Presentation Mode
+                </button>
+            </div>
+ 
             <div id="agendaDisplay">
                 <div class="loading-container">
                     <div class="loading"></div>
@@ -2009,6 +2015,158 @@
                     </div>
                 </div>
             `;
+        }
+
+        function openPresentationMode() {
+            if (!selectedMeetingId || !meetings[selectedMeetingId]) {
+                alert('Please select a meeting first.');
+                return;
+            }
+            
+            const meeting = meetings[selectedMeetingId];
+            
+            // Generate presentation HTML
+            const presentationHTML = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Agenda - Presentation Mode</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            background: #ffffff;
+            color: #333;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        .header {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 3px solid #1976d2;
+        }
+        .leadership-row {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        .role-item {
+            text-align: center;
+        }
+        .role-title {
+            font-weight: bold;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: #1976d2;
+        }
+        .role-name {
+            font-size: 1.5rem;
+        }
+        .speeches-section {
+            margin-top: 2rem;
+        }
+        .speech-row {
+            display: grid;
+            grid-template-columns: 2fr 3fr 2fr;
+            gap: 1.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border-left: 4px solid #1976d2;
+        }
+        .speech-column {
+            font-size: 1.5rem;
+        }
+        .column-label {
+            font-weight: bold;
+            color: #666;
+            font-size: 1.25rem;
+            margin-bottom: 0.3rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        ${meeting.date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} | ${meeting.type === 'in-person' ? 'In-Person' : 'Virtual'}
+    </div>
+    
+    <div class="leadership-row">
+        <div class="role-item">
+            <div class="role-title">Toastmaster</div>
+            <div class="role-name">${meeting.roles['toastmaster-of-the-evening'] || meeting.roles.toastmaster || 'Available'}</div>
+        </div>
+        <div class="role-item">
+            <div class="role-title">General Evaluator</div>
+            <div class="role-name">${meeting.roles['general-evaluator'] || meeting.roles.evaluator || 'Available'}</div>
+        </div>
+        <div class="role-item">
+            <div class="role-title">Ah-Counter/Grammarian</div>
+            <div class="role-name">${meeting.roles['ah-counter-grammarian'] || meeting.roles['ah-counter/grammarian'] || 'Available'}</div>
+        </div>
+        <div class="role-item">
+            <div class="role-title">Timer</div>
+            <div class="role-name">${meeting.roles.timer || 'Available'}</div>
+        </div>
+        <div class="role-item">
+            <div class="role-title">Table Topics</div>
+            <div class="role-name">${meeting.roles['table-topics-master'] || meeting.roles.topics || 'Available'}</div>
+        </div>
+    </div>
+    
+    <div class="speeches-section">
+        ${generatePresentationSpeeches(meeting)}
+    </div>
+</body>
+</html>
+            `;
+            
+            // Open in new window
+            const presentationWindow = window.open('', '_blank', 'width=1920,height=1080');
+            presentationWindow.document.write(presentationHTML);
+            presentationWindow.document.close();
+        }
+        
+        function generatePresentationSpeeches(meeting) {
+            let html = '';
+            for (let i = 0; i < 4; i++) {
+                const speaker = meeting.speakers[i];
+                const evaluator = meeting.evaluators[i];
+                
+                // Only show row if there's a speaker
+                if (speaker && speaker.name) {
+                    html += `
+                        <div class="speech-row">
+                            <div class="speech-column">
+                                <div class="column-label">Speaker</div>
+                                ${speaker.name}
+                            </div>
+                            <div class="speech-column">
+                                <div class="column-label">Speech Title</div>
+                                "${speaker.title}"
+                            </div>
+                            <div class="speech-column">
+                                <div class="column-label">Evaluator</div>
+                                ${evaluator || 'Available'}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+            return html || '<div style="text-align: center; padding: 2rem; color: #666;">No speeches scheduled yet</div>';
         }
 
         function generateAgendaLine(role, assignment, roleId) {
