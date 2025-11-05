@@ -379,6 +379,21 @@
             background: #d32f2f;
         }
 
+        .edit-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+            margin-right: 4px;
+        }
+        .edit-button:hover {
+            background: #45a049;
+        }
+
         .admin-edit-button {
             background: #9c27b0;
             color: white;
@@ -1560,6 +1575,7 @@
         let selectedMeetingId = null;
         let selectedAdminMeetingId = null;
         let currentSpeechSlot = null;
+        let isEditMode = false;
 
         // API Client instance
         const apiClient = window.apiClient;
@@ -2055,8 +2071,9 @@
                     }
                 } else {
                     if (assignment && assignment.name === currentUser.name) {
-                        actionButton = `<button class="remove-button" onclick="removeSpeaker(${index})">Remove</button>`;
-                    } else if (!assignment) {
+ 			actionButton = `<button class="edit-button" onclick="editSpeech(${index})">Edit</button>
+                    			<button class="remove-button" onclick="removeSpeaker(${index})">Remove</button>`;
+		    } else if (!assignment) {
                         actionButton = `<button class="signup-button" onclick="signUpForSpeech(${index})">Sign Up</button>`;
                     }
                 }
@@ -2124,6 +2141,7 @@
         function closeSpeechModal() {
             document.getElementById('speechModal').style.display = 'none';
             currentSpeechSlot = null;
+            isEditMode = false;
         }
 
         async function confirmSpeechSignup() {
@@ -2136,14 +2154,23 @@
             }
             
             try {
-                await apiClient.signUpForSpeech(selectedMeetingId, currentSpeechSlot, title, project);
-                closeSpeechModal();
-                await initializeMeetings();
-                alert('Successfully signed up for speech slot!');
+                if (isEditMode) {
+                    // Edit existing speech
+                    await apiClient.updateSpeech(selectedMeetingId, currentSpeechSlot, title, project);
+                    closeSpeechModal();
+                    await initializeMeetings();
+                    alert('Successfully updated speech!');
+                } else {
+                    // Sign up for new speech
+                    await apiClient.signUpForSpeech(selectedMeetingId, currentSpeechSlot, title, project);
+                    closeSpeechModal();
+                    await initializeMeetings();
+                    alert('Successfully signed up for speech slot!');
+                }
             } catch (error) {
-                alert('Failed to sign up for speech. Please try again.');
+                alert(isEditMode ? 'Failed to update speech. Please try again.' : 'Failed to sign up for speech. Please try again.');
             }
-        }
+        }        
 
         // Meeting Signup Functions
         function signUpForSpeech(slotIndex) {
@@ -2151,7 +2178,7 @@
                 alert('Please login to sign up for speeches.');
                 return;
             }
-            
+
             const meeting = meetings[selectedMeetingId];
             if (meeting.speakers[slotIndex]) {
                 alert('This speech slot is already taken.');
@@ -2160,6 +2187,31 @@
             
             showSpeechModal(slotIndex);
         }
+
+        function editSpeech(slotIndex) {
+            if (!currentUser) {
+                alert('Please login to edit speeches.');
+                return;
+            }
+            const meeting = meetings[selectedMeetingId];
+            const speaker = meeting.speakers[slotIndex];
+            
+            if (!speaker || speaker.name !== currentUser.name) {
+                alert('You can only edit your own speeches.');
+                return;
+            }
+            
+            // Pre-fill the modal with current data
+            currentSpeechSlot = slotIndex;
+            document.getElementById('speechTitle').value = speaker.title || '';
+            document.getElementById('speechProject').value = speaker.project || '';
+            document.getElementById('speechModal').style.display = 'block';
+            document.getElementById('speechTitle').focus();
+            
+            // Change the modal to "edit mode"
+            isEditMode = true;
+        }
+
 
         async function signUpForEvaluator(slotIndex) {
             if (!currentUser) {

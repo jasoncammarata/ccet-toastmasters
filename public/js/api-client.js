@@ -185,6 +185,18 @@ class ApiClient {
         });
     }
 
+    async updateSpeech(meetingId, slotNumber, title, project) {
+        return this.request('/meetings/speeches', {
+            method: 'PUT',
+            body: JSON.stringify({
+                meetingId,
+                slotNumber,
+                speechTitle: title,
+                speechProject: project
+            })
+        });
+    }
+
     async signUpForEvaluator(meetingId, slotNumber) {
         return this.request('/meetings/evaluators', {
             method: 'POST',

@@ -34,7 +34,7 @@ module.exports = async (req, res) => {
       res.status(500).json({ error: 'Internal server error' });
     }
   }
-  else if (req.method === 'POST' || req.method === 'DELETE') {
+  else if (req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE') {
     // Require auth for modifying speeches
     authMiddleware(async (req, res) => {
       if (req.method === 'POST') {
@@ -76,6 +76,38 @@ module.exports = async (req, res) => {
           });
         } catch (error) {
           console.error('Create speech error:', error);
+          res.status(500).json({ error: 'Internal server error' });
+        }
+      }
+      
+      else if (req.method === 'PUT') {
+        const { meetingId, slotNumber, speechTitle, speechProject } = req.body;
+
+        if (!meetingId || slotNumber === undefined || !speechTitle) {
+          return res.status(400).json({ error: 'Meeting ID, slot number, and speech title required' });
+        }
+
+        try {
+          // Get speeches for this meeting ordered by ID
+          const speeches = db.prepare(`
+            SELECT id FROM speeches
+            WHERE meeting_id = ?
+            ORDER BY id
+          `).all(meetingId);
+
+          if (speeches[slotNumber]) {
+            db.prepare(`
+              UPDATE speeches
+              SET speech_title = ?, speech_project = ?
+              WHERE id = ?
+            `).run(speechTitle, speechProject || null, speeches[slotNumber].id);
+            
+            res.json({ success: true });
+          } else {
+            res.status(404).json({ error: 'Speech not found' });
+          }
+        } catch (error) {
+          console.error('Update speech error:', error);
           res.status(500).json({ error: 'Internal server error' });
         }
       }
