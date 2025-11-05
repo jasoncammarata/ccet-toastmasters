@@ -2232,9 +2232,14 @@
             
             let actionButton = '';
             if (currentUser) {
-                if (currentUser.isAdmin) {
+            if (currentUser.isAdmin) {
                     if (assignmentName) {
-                        actionButton = `<button class="admin-edit-button" onclick="adminEditRole('${roleId}', '${role}')">Edit</button>`;
+                        if (roleId === 'ah-counter-grammarian') {
+                            actionButton = `<button class="edit-button" onclick="adminEditWordOfTheDay()">Edit Word</button>
+                                          <button class="admin-edit-button" onclick="adminEditRole('${roleId}', '${role}')">Edit</button>`;
+                        } else {
+                            actionButton = `<button class="admin-edit-button" onclick="adminEditRole('${roleId}', '${role}')">Edit</button>`;
+                        }
                     } else {
                         actionButton = `<button class="signup-button" onclick="signUpForRole('${roleId}', '${role}')">Sign Up</button>`;
                     }
@@ -2430,20 +2435,31 @@
                 alert('Please login to edit word of the day.');
                 return;
             }
-            
             const meeting = meetings[selectedMeetingId];
             const ahCounterRole = meeting.roles['ah-counter-grammarian'] || meeting.roles['ah-counter/grammarian'];
-            
             if (!ahCounterRole || !ahCounterRole.name || ahCounterRole.name !== currentUser.name) {
                 alert('You can only edit your own word of the day.');
                 return;
             }
-            
             // Pre-fill the modal with current word
             document.getElementById('wordOfTheDay').value = ahCounterRole.wordOfTheDay || '';
             document.getElementById('wordModal').style.display = 'block';
             document.getElementById('wordOfTheDay').focus();
-            
+            // Change to edit mode
+            isEditMode = true;
+        }
+        
+        function adminEditWordOfTheDay() {
+            if (!currentUser || !currentUser.isAdmin) {
+                alert('Admin privileges required.');
+                return;
+            }
+            const meeting = meetings[selectedMeetingId];
+            const ahCounterRole = meeting.roles['ah-counter-grammarian'] || meeting.roles['ah-counter/grammarian'];
+            // Pre-fill the modal with current word (or empty if none)
+            document.getElementById('wordOfTheDay').value = (ahCounterRole && ahCounterRole.wordOfTheDay) || '';
+            document.getElementById('wordModal').style.display = 'block';
+            document.getElementById('wordOfTheDay').focus();
             // Change to edit mode
             isEditMode = true;
         }
@@ -2609,35 +2625,15 @@
             const currentSpeaker = meeting.speakers[index];
             
             if (currentSpeaker) {
-                const name = prompt('Speaker name:', currentSpeaker.name);
-                if (name === null) return;
+                // Pre-fill the modal with current data
+                currentSpeechSlot = index;
+                document.getElementById('speechTitle').value = currentSpeaker.title || '';
+                document.getElementById('speechProject').value = currentSpeaker.project || '';
+                document.getElementById('speechModal').style.display = 'block';
+                document.getElementById('speechTitle').focus();
                 
-                const title = prompt('Speech title:', currentSpeaker.title);
-                if (title === null) return;
-                
-                const project = prompt('Project/Manual:', currentSpeaker.project);
-                if (project === null) return;
-                
-                if (name.trim() && title.trim()) {
-                    try {
-                        await apiClient.request('/meetings/speeches', {
-                            method: 'POST',
-                            body: JSON.stringify({
-                                meetingId: selectedMeetingId,
-                                slotNumber: index,
-                                name: name.trim(),
-                                title: title.trim(),
-                                project: project.trim() || 'TBD'
-                            })
-                        });
-                        await initializeMeetings();
-                        alert('Speaker updated successfully!');
-                    } catch (error) {
-                        alert('Failed to update speaker.');
-                    }
-                } else {
-                    alert('Both name and title are required.');
-                }
+                // Set to edit mode
+                isEditMode = true;
             } else {
                 signUpForSpeech(index);
             }
