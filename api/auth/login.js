@@ -7,6 +7,7 @@ module.exports = async (req, res) => {
   }
 
   const { email, password } = req.body;
+  const emailLower = email ? email.toLowerCase() : '';
 
   if (!email || !password) {
     return res.status(400).json({ error: 'Email and password required' });
@@ -18,12 +19,12 @@ module.exports = async (req, res) => {
     // Check if we're using Postgres
     if (process.env.POSTGRES_URL) {
       const { sql } = require('@vercel/postgres');
-      const result = await sql`SELECT * FROM members WHERE email = ${email}`;
+      const result = await sql`SELECT * FROM members WHERE LOWER(email) = ${emailLower}`;
       user = result.rows[0];
     } else {
       // Fallback to SQLite
       const db = require('../../lib/db');
-      user = await db.prepare('SELECT * FROM members WHERE email = ?').get(email);
+      user = await db.prepare('SELECT * FROM members WHERE LOWER(email) = ?').get(emailLower);
     }
     
     if (!user) {
