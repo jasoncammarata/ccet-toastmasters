@@ -1812,70 +1812,82 @@
         async function initializeMeetings() {
             try {
                 const meetingsData = await apiClient.getMeetings();
-                
                 meetings = {};
-                
-                // Process each meeting
+                // Process each meeting - store basic info only (no details yet)
                 for (const meeting of meetingsData) {
-                    // Get detailed information for each meeting
-                    const details = await apiClient.getMeetingDetails(meeting.id);
-                    
                     meetings[meeting.id] = {
                         date: (() => {
-                        const [year, month, day] = meeting.date.split('-');
-                        return new Date(year, month - 1, day);
+                            const [year, month, day] = meeting.date.split('-');
+                            return new Date(year, month - 1, day);
                         })(),
                         type: meeting.type,
                         location: meeting.location,
-                        roles: details.roles || {},
+                        roles: {},
                         speakers: new Array(4).fill(null),
-                        evaluators: new Array(4).fill(null)
+                        evaluators: new Array(4).fill(null),
+                        detailsLoaded: false  // Track if we've loaded details yet
                     };
-                    
-                    // Fill speakers array
-                    details.speeches?.forEach((speech, index) => {
-                        if (index < 4) {
-                            meetings[meeting.id].speakers[index] = {
-                                name: speech.user_name,
-                                title: speech.title,
-                                project: speech.project
-                            };
-                        }
-                    });
-                    
-                    // Fill evaluators array  
-                    details.evaluators?.forEach((evaluator) => {
-    			if (evaluator.slot_number >= 0 && evaluator.slot_number < 4) {
-        			meetings[meeting.id].evaluators[evaluator.slot_number] = evaluator.user_name;
-                        }
-                    });
                 }
-                
                 populateMeetingSelector();
                 populateAdminMeetingSelector();
                 populateDashboardMeetingSelector();
                 
-                    // Find the next upcoming meeting
-                    const today = new Date();
-                    today.setHours(0, 0, 0, 0);
-                    
-                    const nextMeetingId = Object.keys(meetings)
-                        .filter(id => meetings[id].date >= today)
-                        .sort((a, b) => meetings[a].date - meetings[b].date)[0];
-                                  
-             
-
+                // Find the next upcoming meeting
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const nextMeetingId = Object.keys(meetings)
+                    .filter(id => meetings[id].date >= today)
+                    .sort((a, b) => meetings[a].date - meetings[b].date)[0];
+                
                 if (nextMeetingId) {
                     selectedMeetingId = nextMeetingId;
                     const select = document.getElementById('meetingSelect');
                     if (select) {
                         select.value = nextMeetingId;
-                        updateAgenda();
                     }
+                    // Load details for the selected meeting only
+                    await loadMeetingDetails(nextMeetingId);
+                    updateAgenda();
                 }
             } catch (error) {
                 console.error('Failed to load meetings:', error);
                 showConnectionError();
+            }
+        }
+
+        async function loadMeetingDetails(meetingId) {
+            // Check if we already loaded details for this meeting
+            if (meetings[meetingId].detailsLoaded) {
+                return;  // Already loaded, skip
+            }
+            
+            try {
+                const details = await apiClient.getMeetingDetails(meetingId);
+                meetings[meetingId].roles = details.roles || {};
+                meetings[meetingId].speakers = new Array(4).fill(null);
+                meetings[meetingId].evaluators = new Array(4).fill(null);
+                
+                // Fill speakers array
+                details.speeches?.forEach((speech, index) => {
+                    if (index < 4) {
+                        meetings[meetingId].speakers[index] = {
+                            name: speech.user_name,
+                            title: speech.title,
+                            project: speech.project
+                        };
+                    }
+                });
+                
+                // Fill evaluators array
+                details.evaluators?.forEach((evaluator) => {
+                    if (evaluator.slot_number >= 0 && evaluator.slot_number < 4) {
+                        meetings[meetingId].evaluators[evaluator.slot_number] = evaluator.user_name;
+                    }
+                });
+                
+                meetings[meetingId].detailsLoaded = true;
+            } catch (error) {
+                console.error('Failed to load meeting details:', error);
             }
         }
 
@@ -1941,16 +1953,17 @@
             });
         }
 
-        function updateAgenda() {
+        async function updateAgenda() {
             const select = document.getElementById('meetingSelect');
             if (!select) return;
             
             selectedMeetingId = select.value;
-            
             if (!selectedMeetingId || !meetings[selectedMeetingId]) return;
             
-            const meeting = meetings[selectedMeetingId];
+            // Load details if not already loaded
+            await loadMeetingDetails(selectedMeetingId);
             
+            const meeting = meetings[selectedMeetingId];
             const meetingInfo = document.getElementById('selectedMeetingInfo');
             if (meetingInfo) {
                 meetingInfo.innerHTML = `
@@ -1959,10 +1972,8 @@
                     <small>📍 ${meeting.location} • 7:00 PM - 8:30 PM</small>
                 `;
             }
-            
             const description = document.getElementById('agendaDescription');
             const visitorNote = document.getElementById('visitorNote');
-            
             if (description) {
                 if (currentUser) {
                     description.textContent = 'View the agendas for our upcoming meetings and sign up for speeches and roles.';
@@ -1972,7 +1983,6 @@
                     if (visitorNote) visitorNote.style.display = 'block';
                 }
             }
-            
             const agendaDisplay = document.getElementById('agendaDisplay');
             if (agendaDisplay) {
                 agendaDisplay.innerHTML = generateAgendaHTML(meeting);
