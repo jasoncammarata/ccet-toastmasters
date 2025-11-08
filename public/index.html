@@ -1372,7 +1372,7 @@
         <!-- Other sections (Meeting Roles, Education, Resources, About, Contact) remain the same -->
         <!-- I'll include just the structure to show they're preserved -->
         
-        <!-- Education Section -->
+        <!-- Log My Speech Section -->
         <section id="education" class="content-section">
             <h2>Toastmasters: Pathways & Base Camp</h2>
             <p>Everything you need to select a path and track your progress.</p>
@@ -1424,7 +1424,7 @@
 
             <div class="role-card">
                 <h3>Club History</h3>
-                <p>Founded in 2018, Crystal City Evening Toastmasters has been serving the Arlington and Washington D.C. area with a commitment to excellence in communication and leadership development. Our diverse membership includes professionals from various industries, all united by the desire to improve their speaking and leadership abilities.</p>
+                <p>For over 25 years, Crystal City Evening Toastmasters has been serving the Arlington and Washington D.C. area with a commitment to excellence in communication and leadership development. Our diverse membership includes professionals from various industries, all united by the desire to improve their speaking and leadership abilities.</p>
             </div>
 
             <div class="role-card">
@@ -1438,11 +1438,7 @@
                     <li>Learn in a supportive environment</li>
                 </ul>
             </div>
-
-            <div class="role-card">
-                <h3>Club Officers</h3>
-                <p id="clubOfficers">Loading club officers...</p>
-            </div>
+            
         </section>
 
         <!-- Contact Section -->
@@ -1467,17 +1463,11 @@
                 </div>
 
                 <div class="role-card">
-                    <h3>📧 Contact Information</h3>
-                    <p><strong>Membership Questions or <br> General Inquiries:</strong><br>
-                    crystalcityeveningtm@gmail.com</p>
+                    <h3>📧 Contact Us by Email</h3>
+                    <p><strong>Membership Questions or General Inquiries:</strong></p>
+                    <p style="color: #1976d2; font-size: 1.1rem; font-weight: bold;">CrystalCityEveningTM@gmail.com</p>
                 </div>
-
-                <div class="role-card">
-                    <h3>🌐 Find Us Online</h3>
-                    <p><strong>Facebook:</strong> Crystal City Evening Toastmasters</p>
-                    <p><strong>LinkedIn:</strong> Crystal City Evening Toastmasters</p>
-                    <p><strong>Meetup:</strong> Crystal City Toastmasters</p>
-                </div>
+                
             </div>
 
             <div class="role-card" style="margin-top: 2rem;">
@@ -1493,16 +1483,14 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <h4>Crystal City Evening Toastmasters</h4>
-                    <p>Building confident communicators and leaders since 2018</p>
+                    <p>Building confident communicators and leaders for over 25 years.</p>
                     <p>Club #9368 | District 29</p>
                 </div>
                 <div class="footer-section">
                     <h4>Quick Links</h4>
                     <ul>
-                        <li><a href="https://www.toastmasters.org" target="_blank">Toastmasters International</a></li>
-                        <li><a href="#" onclick="alert('Login to access member portal')">Member Portal</a></li>
-                        <li><a href="#" onclick="showSection('contact')">Contact Us</a></li>
-                        <li><a href="#" onclick="showSection('about')">About</a></li>
+                        <li><a href="https://www.toastmasters.org" target="_blank">Toastmasters Official Website</a></li>
+                        <li><a href="#" onclick="showSection('contact')">Crystal City Evening Toastmasters Contact Us</a></li>                        
                     </ul>
                 </div>
                 <div class="footer-section">
@@ -3373,22 +3361,6 @@
             }
         }
 
-        // Load club officers (static for now)
-        function loadClubOfficers() {
-            const officersEl = document.getElementById('clubOfficers');
-            if (officersEl) {
-                officersEl.innerHTML = `
-                    <strong>President:</strong> <br>
-                    <strong>VP Education:</strong> <br>
-                    <strong>VP Membership:</strong> <br>
-                    <strong>VP Public Relations:</strong> <br>
-                    <strong>Secretary:</strong> <br>
-                    <strong>Treasurer:</strong> <br>
-                    <strong>Sergeant at Arms:</strong> 
-                `;
-            }
-        }
-
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', async () => {
             console.log('Page loaded, initializing...');
@@ -3401,9 +3373,6 @@
             }
             // Initialize meetings for everyone (including visitors)
             await initializeMeetings();
-              
-            // Load static content
-            loadClubOfficers();
             
             // Show home section by default
             showSection('home');
