@@ -39,6 +39,7 @@ app.all('/api/meetings/evaluators', convertHandler(require('./api/meetings/evalu
 app.all('/api/members/index', convertHandler(require('./api/members/index')));
 app.all('/api/members/:id', convertHandler(require('./api/members/[id]')));
 app.all('/api/applications/index', convertHandler(require('./api/applications/index')));
+app.all('/api/participation/tracker', convertHandler(require('./api/participation/tracker')));
 
 // Catch all route - must be last
 app.get('/*', (req, res) => {
