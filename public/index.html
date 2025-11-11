@@ -1,4 +1,4 @@
-<!DOCTYPE html> <html lang="en"> <head>
+!DOCTYPE html> <html lang="en"> <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Crystal City Evening Toastmasters</title>
@@ -1691,7 +1691,6 @@
 
         function updateAuthDisplay() {
             const authSection = document.getElementById('authSection');
-            const rolesNavItem = document.getElementById('roles-nav-item');
             const adminNavItem = document.getElementById('admin-nav-item');
             const adminDashboardNavItem = document.getElementById('admin-dashboard-nav-item');
             const secondaryNav = document.getElementById('secondaryNav');
@@ -1703,8 +1702,7 @@
                 `;
                 
                 secondaryNav.style.display = 'flex';
-                rolesNavItem.style.display = 'block';
-                
+                                
                 if (currentUser.isAdmin) {
                     adminNavItem.style.display = 'none';
                     adminDashboardNavItem.style.display = 'block';
@@ -1718,7 +1716,6 @@
                     <button onclick="showAdminLogin()">Admin Login</button>
                 `;
                 secondaryNav.style.display = 'none';
-                rolesNavItem.style.display = 'none';
                 adminNavItem.style.display = 'none';
                 adminDashboardNavItem.style.display = 'none';
             }
