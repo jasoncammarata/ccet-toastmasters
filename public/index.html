@@ -955,6 +955,7 @@
                     <li><a onclick="showSection('home')" class="active" id="nav-home">Home</a></li>
                     <li><a onclick="showSection('agenda')" id="nav-agenda">Meeting Dates & Sign-ups</a></li>
                     <li><a onclick="showSection('education')" id="nav-education">Log My Speech</a></li>
+                    <li><a onclick="showSection('participation')" id="nav-participation">Participation Tracker</a></li>
                     <li><a onclick="showSection('about')" id="nav-about">About Us</a></li>
                     <li><a onclick="showSection('contact')" id="nav-contact">Contact</a></li>
                 </ul>
@@ -1413,6 +1414,18 @@
             </div>
         </section>
 
+        <!-- Participation Tracker Section -->
+        <section id="participation" class="content-section">
+            <h2>📊 Participation Tracker</h2>
+            <p>Member participation statistics since October 1, 2025</p>
+            <div id="participationDisplay">
+                <div class="loading-container">
+                    <div class="loading"></div>
+                    <p>Loading participation data...</p>
+                </div>
+            </div>
+        </section>
+
         <!-- About Section -->
         <section id="about" class="content-section">
             <h2>About Crystal City Evening Toastmasters</h2>
@@ -1562,6 +1575,8 @@
                 }, 100);
             } else if (sectionId === 'roles' && currentUser) {
                 loadMeetingRoles();
+            } else if (sectionId === 'participation') {
+                loadParticipationTracker();
             }
         }
 
@@ -2660,7 +2675,8 @@
                                 <div class="member-actions">
 				    ${member.email !== 'CCET_Admin' ?
 				        `<button class="btn-primary" style="margin-right: 10px;" onclick="changePassword(${member.id}, '${member.name}')">Change Password</button>
-				         <button class="remove-button-admin" onclick="dashboardRemoveMember(${member.id})">Remove</button>` :
+				         <select onchange="toggleMemberActive(${member.id}, ${member.is_active}, '${member.name}', this.value)" style="margin-right: 10px; padding: 8px; border-radius: 5px;"><option value="1" ${member.is_active ? 'selected' : ''}>Active</option><option value="0" ${!member.is_active ? 'selected' : ''}>Inactive</option></select>
+                                         <button class="remove-button-admin" onclick="dashboardRemoveMember(${member.id})">Remove</button>` :
 				        '<span style="color: #666; font-size: 0.85rem;">Protected</span>'}
                                 </div>
                             </div>
@@ -2977,7 +2993,8 @@
                                     <div class="member-actions">
                                         ${member.email !== 'CCET_Admin' ?
 					    `<button class="btn-primary" style="margin-right: 10px;" onclick="changePassword(${member.id}, '${member.name}')">Change Password</button>
-					     <button class="remove-button-admin" onclick="dashboardRemoveMember(${member.id})">Remove</button>` :
+                                             <select onchange="toggleMemberActive(${member.id}, ${member.is_active}, '${member.name}', this.value)" style="margin-right: 10px; padding: 8px; border-radius: 5px;"><option value="1" ${member.is_active ? 'selected' : ''}>Active</option><option value="0" ${!member.is_active ? 'selected' : ''}>Inactive</option></select>
+                                             <button class="remove-button-admin" onclick="dashboardRemoveMember(${member.id})">Remove</button>` :
 					    '<span style="color: #666; font-size: 0.85rem;">Protected</span>'}
                                     </div>
                                 </div>
@@ -3220,6 +3237,29 @@
                 alert('Failed to update password.');
             }
         }
+        
+        async function toggleMemberActive(memberId, currentStatus, memberName, newValue) {
+            const newStatus = parseInt(newValue);          
+            const action = newStatus ? 'activate' : 'deactivate';
+            
+            if (!confirm(`Are you sure you want to ${action} ${memberName}?`)) {
+                 initializeDashboard();
+                 return;
+            }
+
+            try {
+                const response = await apiClient.request(`/members/${memberId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ is_active: newStatus })
+                });
+
+                alert(`${memberName} has been ${newStatus ? 'activated' : 'deactivated'} successfully.`);
+                initializeDashboard();
+            } catch (error) {
+                console.error('Toggle active error:', error);
+                alert('Failed to update member status. Please try again.');
+            }
+        }
 
         // Load meeting roles
         async function loadMeetingRoles() {
@@ -3374,6 +3414,77 @@
             // Show home section by default
             showSection('home');
         });
+
+        // Load Participation Tracker
+        async function loadParticipationTracker() {
+            const participationDisplay = document.getElementById('participationDisplay');
+            if (!participationDisplay) return;
+
+            participationDisplay.innerHTML = `
+                <div class="loading-container">
+                    <div class="loading"></div>
+                    <p>Loading participation data...</p>
+                </div>
+            `;
+
+            try {
+                const response = await fetch('/api/participation/tracker');
+                const data = await response.json();
+
+                if (!data || data.length === 0) {
+                    participationDisplay.innerHTML = '<p>No participation data available.</p>';
+                    return;
+                }
+
+                // Build the table
+                let tableHTML = `
+                    <div style="overflow-x: auto;">
+                        <table style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
+                            <thead>
+                                <tr style="background: #1976d2; color: white;">
+                                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Name</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Speeches</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Evaluations</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Toastmaster</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Gen. Evaluator</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Table Topics</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Grammarian</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Timer</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; background: #0d47a1;"><strong>Total</strong></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                data.forEach((member, index) => {
+                    const rowStyle = index % 2 === 0 ? 'background: #f5f5f5;' : 'background: white;';
+                    tableHTML += `
+                        <tr style="${rowStyle}">
+                            <td style="padding: 10px; border: 1px solid #ddd;"><strong>${member.name}</strong></td>
+                            <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${member.speeches}</td>
+                            <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${member.evaluations}</td>
+                            <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${member.toastmaster}</td>
+                            <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${member.generalEvaluator}</td>
+                            <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${member.tableTopics}</td>
+                            <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${member.grammarian}</td>
+                            <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${member.timer}</td>
+                            <td style="padding: 10px; text-align: center; border: 1px solid #ddd; background: #e3f2fd;"><strong>${member.total}</strong></td>
+                        </tr>
+                    `;
+                });
+
+                tableHTML += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                participationDisplay.innerHTML = tableHTML;
+            } catch (error) {
+                console.error('Error loading participation tracker:', error);
+                participationDisplay.innerHTML = '<p>Error loading participation data. Please try again later.</p>';
+            }
+        }
 
         // Handle modal clicks
         window.onclick = function(event) {

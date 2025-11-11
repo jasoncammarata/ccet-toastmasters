@@ -6,7 +6,7 @@ module.exports = authMiddleware(async (req, res) => {
   if (req.method === 'GET') {
     try {
       const members = await db.prepare(`
-        SELECT id, name, email, role, joined_date 
+        SELECT id, name, email, role, joined_date, is_active 
         FROM members 
         ORDER BY name
       `).all();

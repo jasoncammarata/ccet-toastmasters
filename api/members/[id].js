@@ -67,6 +67,11 @@ module.exports = authMiddleware(async (req, res) => {
         values.push(role);
       }
 
+      if (typeof req.body.is_active !== 'undefined' && req.user.role === 'admin') {
+        updates.push('is_active = ?');
+        values.push(req.body.is_active);
+      }
+
       if (updates.length === 0) {
         return res.status(400).json({ error: 'No fields to update' });
       }
