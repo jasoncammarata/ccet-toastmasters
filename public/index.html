@@ -1420,7 +1420,15 @@
         <!-- Participation Tracker Section -->
         <section id="participation" class="content-section">
             <h2>📊 Participation Tracker</h2>
-            <p>Member participation statistics since October 1, 2025</p>
+            <p>The most recent membership period began on October 1, 2025.</p>
+            <div style="margin: 1rem 0; padding: 1rem; background: #f5f5f5; border-radius: 8px;">
+                <label style="margin-right: 10px;">Filter by Date Range:</label>
+                <label style="margin-right: 5px;">From:</label>
+                <input type="date" id="participationStartDate" value="2025-10-01" style="margin-right: 15px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                <label style="margin-right: 5px;">To:</label>
+                <input type="date" id="participationEndDate" style="margin-right: 15px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                <button onclick="loadParticipationTracker()" class="btn-primary" style="padding: 6px 16px;">Apply Filter</button>
+            </div>
             <div id="participationDisplay">
                 <div class="loading-container">
                     <div class="loading"></div>
@@ -3431,7 +3439,17 @@
             `;
 
             try {
-                const response = await fetch('/api/participation/tracker');
+                // Get date range from inputs
+                const startDate = document.getElementById('participationStartDate').value || '2025-10-01';
+                const endDate = document.getElementById('participationEndDate').value || '';
+                                
+                // Build URL with query parameters
+                let url = `/api/participation/tracker?startDate=${startDate}`;
+                if (endDate) {
+                    url += `&endDate=${endDate}`;
+                }
+                
+                const response = await fetch(url);
                 const data = await response.json();
 
                 if (!data || data.length === 0) {
@@ -3446,14 +3464,14 @@
                             <thead>
                                 <tr style="background: #1976d2; color: white;">
                                     <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Name</th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; background: #0d47a1;"><strong>Total</strong></th>                                    
                                     <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Speeches</th>
                                     <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Evaluations</th>
                                     <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Toastmaster</th>
                                     <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Gen. Evaluator</th>
                                     <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Table Topics</th>
                                     <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Grammarian</th>
-                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Timer</th>
-                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd; background: #0d47a1;"><strong>Total</strong></th>
+                                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;">Timer</th>                                    
                                 </tr>
                             </thead>
                             <tbody>
@@ -3464,14 +3482,14 @@
                     tableHTML += `
                         <tr style="${rowStyle}">
                             <td style="padding: 10px; border: 1px solid #ddd;"><strong>${member.name}</strong></td>
+                            <td style="padding: 10px; text-align: center; border: 1px solid #ddd; background: #e3f2fd;"><strong>${member.total}</strong></td>
                             <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${member.speeches}</td>
                             <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${member.evaluations}</td>
                             <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${member.toastmaster}</td>
                             <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${member.generalEvaluator}</td>
                             <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${member.tableTopics}</td>
                             <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${member.grammarian}</td>
-                            <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${member.timer}</td>
-                            <td style="padding: 10px; text-align: center; border: 1px solid #ddd; background: #e3f2fd;"><strong>${member.total}</strong></td>
+                            <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${member.timer}</td>                            
                         </tr>
                     `;
                 });
