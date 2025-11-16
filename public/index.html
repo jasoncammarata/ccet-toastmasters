@@ -1001,6 +1001,54 @@
         </div>
     </div>
 
+    <!-- Admin Assignment Modal -->
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <h3 id="adminModalTitle">Assign Member</h3>
+            <div class="form-group">
+                <label for="adminMemberSelect">Select Member:</label>
+                <select id="adminMemberSelect">
+                    <option value="">Loading members...</option>
+                </select>
+            </div>
+            <div class="form-group" id="adminWordGroup" style="display: none;">
+                <label for="adminWordOfTheDay">Word of the Day:</label>
+                <input type="text" id="adminWordOfTheDay" placeholder="Enter the word of the day">
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel" onclick="closeAdminModal()">Cancel</button>
+                <button class="clear-button" onclick="confirmAdminClear()" style="background: #f44336;">Clear Assignment</button>
+                <button class="confirm" onclick="confirmAdminAssignment()">Assign</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Speech Assignment Modal -->
+    <div id="adminSpeechModal" class="modal">
+        <div class="modal-content">
+            <h3 id="adminSpeechModalTitle">Assign Speaker</h3>
+            <div class="form-group">
+                <label for="adminSpeakerSelect">Select Speaker:</label>
+                <select id="adminSpeakerSelect">
+                    <option value="">Loading members...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="adminSpeechTitle">Speech Title: *</label>
+                <input type="text" id="adminSpeechTitle" placeholder="Enter speech title" required>
+            </div>
+            <div class="form-group">
+                <label for="adminSpeechProject">Project/Manual:</label>
+                <input type="text" id="adminSpeechProject" placeholder="e.g., Pathways Level 2, CC Manual #3">
+            </div>
+            <div class="modal-buttons">
+                <button class="cancel" onclick="closeAdminSpeechModal()">Cancel</button>
+                <button class="clear-button" onclick="confirmAdminClearSpeech()" style="background: #f44336;">Clear Speech</button>
+                <button class="confirm" onclick="confirmAdminSpeechAssignment()">Assign</button>
+            </div>
+        </div>
+    </div>
+
     <main class="container">
         <!-- All sections remain the same as original HTML -->
         <!-- Home Section -->
@@ -1781,14 +1829,24 @@
                 const nextMeetingId = Object.keys(meetings)
                     .filter(id => meetings[id].date >= today)
                     .sort((a, b) => meetings[a].date - meetings[b].date)[0];
-                
-                if (nextMeetingId) {
+
+                // If admin and a meeting is already selected, keep that selection
+                // Otherwise, select the next upcoming meeting
+                if (currentUser && currentUser.isAdmin && selectedMeetingId && meetings[selectedMeetingId]) {
+                    // Admin: Keep the currently selected meeting
+                    const select = document.getElementById('meetingSelect');
+                    if (select) {
+                        select.value = selectedMeetingId;
+                    }
+                    await loadMeetingDetails(selectedMeetingId);
+                    updateAgenda();
+                } else if (nextMeetingId) {
+                    // Non-admin or no selection: Select next upcoming meeting
                     selectedMeetingId = nextMeetingId;
                     const select = document.getElementById('meetingSelect');
                     if (select) {
                         select.value = nextMeetingId;
                     }
-                    // Load details for the selected meeting only
                     await loadMeetingDetails(nextMeetingId);
                     updateAgenda();
                 }
@@ -2423,13 +2481,20 @@
                 alert('Please login to sign up for speeches.');
                 return;
             }
-
+            
             const meeting = meetings[selectedMeetingId];
             if (meeting.speakers[slotIndex]) {
                 alert('This speech slot is already taken.');
                 return;
             }
             
+            // If admin, show admin speech modal with dropdown
+            if (currentUser.isAdmin) {
+                showAdminSpeechModal(slotIndex);
+                return;
+            }
+            
+            // Regular member uses regular speech modal
             showSpeechModal(slotIndex);
         }
 
@@ -2457,7 +2522,6 @@
             isEditMode = true;
         }
 
-
         async function signUpForEvaluator(slotIndex) {
             if (!currentUser) {
                 alert('Please login to sign up for evaluator roles.');
@@ -2470,6 +2534,17 @@
                 return;
             }
             
+            // If admin, show modal with dropdown
+            if (currentUser.isAdmin) {
+                await showAdminModal({
+                    type: 'evaluator',
+                    index: slotIndex,
+                    currentAssignment: null
+                });
+                return;
+            }
+            
+            // Regular member signs up for themselves
             try {
                 await apiClient.signUpForEvaluator(selectedMeetingId, slotIndex);
                 await initializeMeetings();
@@ -2484,12 +2559,26 @@
                 alert('Please login to sign up for roles.');
                 return;
             }
+            
             const meeting = meetings[selectedMeetingId];
             if (meeting.roles[roleId]) {
                 alert('This role is already taken.');
                 return;
             }
             
+            // If admin, show modal with dropdown
+            if (currentUser.isAdmin) {
+                await showAdminModal({
+                    type: 'role',
+                    roleId: roleId,
+                    roleTitle: roleTitle,
+                    currentAssignment: null,
+                    currentWord: null
+                });
+                return;
+            }
+            
+            // Regular member signs up for themselves
             // Show word modal for ah-counter/grammarian
             if (roleId === 'ah-counter-grammarian') {
                 showWordModal();
@@ -2504,7 +2593,7 @@
                 alert('Failed to sign up for role. Please try again.');
             }
         }
-
+           
         async function removeRoleAssignment(roleId) {
             try {
                 await apiClient.removeRole(selectedMeetingId, roleId);
@@ -2540,92 +2629,269 @@
             const meeting = meetings[selectedMeetingId];
             const currentAssignment = meeting.roles[roleId];
             
-            let newAssignment = prompt(
-                `Edit ${roleTitle}:\n\nCurrent: ${currentAssignment || 'None'}\n\nEnter new assignment (or leave empty to clear):`,
-                currentAssignment || ''
-            );
-            
-            if (newAssignment !== null) {
-                try {
-                    if (newAssignment.trim()) {
-                        await apiClient.request('/meetings/roles', {
-                            method: 'POST',
-                            body: JSON.stringify({
-                                meetingId: selectedMeetingId,
-                                roleType: roleId,
-                                roleName: newAssignment.trim()
-                            })
-                        });
-                    } else {
-                        await apiClient.request('/meetings/roles', {
-                            method: 'DELETE',
-                            body: JSON.stringify({
-                                meetingId: selectedMeetingId,
-                                roleType: roleId
-                            })
-                        });
-                    }
-                    await initializeMeetings();
-                    alert('Role updated successfully!');
-                } catch (error) {
-                    alert('Failed to update role.');
-                }
+            // Extract name and word if it's an object
+            let assignmentName = currentAssignment;
+            let currentWord = null;
+            if (currentAssignment && typeof currentAssignment === 'object') {
+                assignmentName = currentAssignment.name;
+                currentWord = currentAssignment.wordOfTheDay;
             }
+            
+            await showAdminModal({
+                type: 'role',
+                roleId: roleId,
+                roleTitle: roleTitle,
+                currentAssignment: assignmentName,
+                currentWord: currentWord
+            });
         }
 
         async function adminEditSpeaker(index) {
             const meeting = meetings[selectedMeetingId];
             const currentSpeaker = meeting.speakers[index];
             
-            if (currentSpeaker) {
-                // Pre-fill the modal with current data
-                currentSpeechSlot = index;
-                document.getElementById('speechTitle').value = currentSpeaker.title || '';
-                document.getElementById('speechProject').value = currentSpeaker.project || '';
-                document.getElementById('speechModal').style.display = 'block';
-                document.getElementById('speechTitle').focus();
-                
-                // Set to edit mode
-                isEditMode = true;
-            } else {
-                signUpForSpeech(index);
-            }
-        }
+            await showAdminSpeechModal(index, currentSpeaker);
+        }        
 
         async function adminEditEvaluator(index) {
             const meeting = meetings[selectedMeetingId];
             const currentEvaluator = meeting.evaluators[index];
             
-            const newEvaluator = prompt(
-                `Edit Evaluator #${index + 1}:\n\nCurrent: ${currentEvaluator || 'None'}\n\nEnter evaluator name (or leave empty to clear):`,
-                currentEvaluator || ''
-            );
+            await showAdminModal({
+                type: 'evaluator',
+                index: index,
+                currentAssignment: currentEvaluator
+            });
+        }  
+      
+        // Admin Modal Functions
+        let adminModalContext = null;
+        let activeMembers = [];
+
+        async function loadActiveMembers() {
+            try {
+                const members = await apiClient.getMembers();
+                activeMembers = members.filter(m => m.is_active);
+                return activeMembers;
+            } catch (error) {
+                console.error('Failed to load members:', error);
+                return [];
+            }
+        }
+
+        function populateMemberDropdown() {
+            const select = document.getElementById('adminMemberSelect');
+            select.innerHTML = '<option value="">-- Select a member --</option>';
             
-            if (newEvaluator !== null) {
-                try {
-                    if (newEvaluator.trim()) {
-                        await apiClient.request('/meetings/evaluators', {
-                            method: 'POST',
-                            body: JSON.stringify({
-                                meetingId: selectedMeetingId,
-                                slotNumber: index,
-                                evaluatorName: newEvaluator.trim()
-                            })
-                        });
-                    } else {
-                        await apiClient.request('/meetings/evaluators', {
-                            method: 'DELETE',
-                            body: JSON.stringify({
-                                meetingId: selectedMeetingId,
-                                slotNumber: index
-                            })
-                        });
-                    }
-                    await initializeMeetings();
-                    alert('Evaluator updated successfully!');
-                } catch (error) {
-                    alert('Failed to update evaluator.');
+            activeMembers.forEach(member => {
+                const option = document.createElement('option');
+                option.value = member.name;
+                option.textContent = member.name;
+                select.appendChild(option);
+            });
+        }
+
+        async function showAdminModal(context) {
+            adminModalContext = context;
+            
+            // Load members if not already loaded
+            if (activeMembers.length === 0) {
+                await loadActiveMembers();
+            }
+            
+            populateMemberDropdown();
+            
+            // Update modal title
+            const titleElement = document.getElementById('adminModalTitle');
+            if (context.type === 'role') {
+                titleElement.textContent = `Assign ${context.roleTitle}`;
+            } else if (context.type === 'evaluator') {
+                titleElement.textContent = `Assign Evaluator #${context.index + 1}`;
+            }
+            
+            // Show/hide word field for ah-counter-grammarian
+            const wordGroup = document.getElementById('adminWordGroup');
+            const wordInput = document.getElementById('adminWordOfTheDay');
+            if (context.roleId === 'ah-counter-grammarian') {
+                wordGroup.style.display = 'block';
+                wordInput.value = context.currentWord || '';
+            } else {
+                wordGroup.style.display = 'none';
+                wordInput.value = '';
+            }
+            
+            // Pre-select current assignment if exists
+            const select = document.getElementById('adminMemberSelect');
+            if (context.currentAssignment) {
+                select.value = context.currentAssignment;
+            } else {
+                select.value = '';
+            }
+            
+            document.getElementById('adminModal').style.display = 'block';
+        }
+
+        function closeAdminModal() {
+            document.getElementById('adminModal').style.display = 'none';
+            adminModalContext = null;
+        }
+
+        async function confirmAdminAssignment() {
+            const select = document.getElementById('adminMemberSelect');
+            const memberName = select.value;
+            
+            if (!memberName) {
+                alert('Please select a member.');
+                return;
+            }
+            
+            try {
+                if (adminModalContext.type === 'role') {
+                    const wordInput = document.getElementById('adminWordOfTheDay');
+                    const wordOfTheDay = adminModalContext.roleId === 'ah-counter-grammarian' ? wordInput.value.trim() : null;
+                    
+                    await apiClient.adminAssignRole(selectedMeetingId, adminModalContext.roleId, memberName, wordOfTheDay);
+                } else if (adminModalContext.type === 'evaluator') {
+                    await apiClient.request('/meetings/evaluators', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            meetingId: selectedMeetingId,
+                            slotNumber: adminModalContext.index,
+                            evaluatorName: memberName
+                        })
+                    });
                 }
+                
+                closeAdminModal();
+                await initializeMeetings();
+                alert('Assignment successful!');
+            } catch (error) {
+                alert('Failed to assign member. Please try again.');
+            }
+        }
+
+        async function confirmAdminClear() {
+            if (!confirm('Clear this assignment?')) {
+                return;
+            }
+            
+            try {
+                if (adminModalContext.type === 'role') {
+                    await apiClient.removeRole(selectedMeetingId, adminModalContext.roleId);
+                } else if (adminModalContext.type === 'evaluator') {
+                    await apiClient.request('/meetings/evaluators', {
+                        method: 'DELETE',
+                        body: JSON.stringify({
+                            meetingId: selectedMeetingId,
+                            slotNumber: adminModalContext.index
+                        })
+                    });
+                }
+                
+                closeAdminModal();
+                await initializeMeetings();
+                alert('Assignment cleared successfully!');
+            } catch (error) {
+                alert('Failed to clear assignment.');
+            }
+        }
+        
+        // Admin Speech Modal Functions
+        let adminSpeechContext = null;
+
+        async function showAdminSpeechModal(slotIndex, currentSpeaker = null) {
+            adminSpeechContext = { slotIndex };
+            
+            // Load members if not already loaded
+            if (activeMembers.length === 0) {
+                await loadActiveMembers();
+            }
+            
+            // Populate speaker dropdown
+            const select = document.getElementById('adminSpeakerSelect');
+            select.innerHTML = '<option value="">-- Select a speaker --</option>';
+            activeMembers.forEach(member => {
+                const option = document.createElement('option');
+                option.value = member.name;
+                option.textContent = member.name;
+                select.appendChild(option);
+            });
+            
+            // Update modal title
+            document.getElementById('adminSpeechModalTitle').textContent = `Assign Speaker #${slotIndex + 1}`;
+            
+            // Pre-fill if editing
+            if (currentSpeaker) {
+                select.value = currentSpeaker.name;
+                document.getElementById('adminSpeechTitle').value = currentSpeaker.title || '';
+                document.getElementById('adminSpeechProject').value = currentSpeaker.project || '';
+            } else {
+                select.value = '';
+                document.getElementById('adminSpeechTitle').value = '';
+                document.getElementById('adminSpeechProject').value = '';
+            }
+            
+            document.getElementById('adminSpeechModal').style.display = 'block';
+        }
+
+        function closeAdminSpeechModal() {
+            document.getElementById('adminSpeechModal').style.display = 'none';
+            adminSpeechContext = null;
+        }
+
+        async function confirmAdminSpeechAssignment() {
+            const speakerName = document.getElementById('adminSpeakerSelect').value;
+            const title = document.getElementById('adminSpeechTitle').value.trim();
+            const project = document.getElementById('adminSpeechProject').value.trim() || 'TBD';
+            
+            if (!speakerName) {
+                alert('Please select a speaker.');
+                return;
+            }
+            
+            if (!title) {
+                alert('Speech title is required.');
+                return;
+            }
+            
+            try {
+                // Find member by name
+                const member = activeMembers.find(m => m.name === speakerName);
+                if (!member) {
+                    alert('Speaker not found.');
+                    return;
+                }
+                
+                await apiClient.request('/meetings/speeches', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        meetingId: selectedMeetingId,
+                        speakerId: member.id,
+                        speechTitle: title,
+                        speechProject: project
+                    })
+                });
+                
+                closeAdminSpeechModal();
+                await initializeMeetings();
+                alert('Speaker assigned successfully!');
+            } catch (error) {
+                alert('Failed to assign speaker. Please try again.');
+            }
+        }
+
+        async function confirmAdminClearSpeech() {
+            if (!confirm('Clear this speech assignment?')) {
+                return;
+            }
+            
+            try {
+                await apiClient.removeSpeech(selectedMeetingId, adminSpeechContext.slotIndex);
+                closeAdminSpeechModal();
+                await initializeMeetings();
+                alert('Speech cleared successfully!');
+            } catch (error) {
+                alert('Failed to clear speech.');
             }
         }
 

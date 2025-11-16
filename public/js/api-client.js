@@ -228,7 +228,41 @@ class ApiClient {
             })
         });
     }
-    
+
+    // Admin assignment methods
+    async adminAssignRole(meetingId, roleType, memberName, wordOfTheDay = null) {
+        const roleNames = {
+            'toastmaster': 'Toastmaster of the Evening',
+            'evaluator': 'General Evaluator',
+            'ah-counter-grammarian': 'Ah-Counter/Grammarian',
+            'timer': 'Timer',
+            'topics': 'Table Topics Master'
+        };
+
+        // Find member ID by name
+        const members = await this.getMembers();
+        const member = members.find(m => m.name === memberName);
+        
+        if (!member) {
+            throw new Error('Member not found');
+        }
+
+        const body = {
+            meetingId,
+            roleName: roleNames[roleType] || roleType,
+            memberId: member.id
+        };
+
+        // Add word of the day if provided
+        if (wordOfTheDay) {
+            body.wordOfTheDay = wordOfTheDay;
+        }
+
+        return this.request('/meetings/roles', {
+            method: 'POST',
+            body: JSON.stringify(body)
+        });
+    }    
 
     // Remove assignments - Require auth
     async removeRole(meetingId, roleType) {
