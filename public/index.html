@@ -1425,7 +1425,31 @@
         <section id="education" class="content-section">
             <h2>Toastmasters: Pathways & Base Camp</h2>
             <p>Everything you need to select a path and track your progress.</p>
-
+            
+            <!-- Speech Log Feature -->
+            <div id="speechLogContainer" style="margin-bottom: 2rem;">
+                <h3>📋 Speech Log</h3>
+                <p>Track which speeches have been logged in Pathways. Members can mark their own speeches as logged.</p>
+                <div style="margin-bottom: 1rem;">
+                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                        <div style="position: relative; flex: 1; max-width: 350px;">
+                            <input type="text" id="speechMemberSearch" placeholder="Search for a member..." autocomplete="off" oninput="searchSpeechMembers(this.value)" onfocus="searchSpeechMembers(this.value)" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                            <div id="speechMemberDropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 4px 4px; max-height: 200px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
+                        </div>
+                        <button onclick="showAllSpeechMembers()" class="btn-primary" style="padding: 8px 16px; background: #1976d2;">Show All</button>
+                        <button onclick="clearSpeechMemberSelection()" class="btn-primary" style="padding: 8px 16px; background: #757575;">Clear</button>
+                    </div>
+                    <div id="selectedMemberChips" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;"></div>
+                </div>
+                <div id="speechLogDisplay">
+                    <div class="loading-container">
+                        <div class="loading"></div>
+                        <p>Loading speech log...</p>
+                    </div>
+                </div>
+            </div>
+            <hr style="margin-bottom: 2rem; border: none; border-top: 1px solid #ddd;">
+   
             <div class="resources-grid">
                 <div class="resource-card">
                     <div class="resource-header">
@@ -1634,6 +1658,8 @@
                 }, 100);
             } else if (sectionId === 'roles' && currentUser) {
                 loadMeetingRoles();
+            } else if (sectionId === 'education') {
+                loadSpeechLog();
             } else if (sectionId === 'participation') {
                 loadParticipationTracker();
             }
@@ -2153,7 +2179,7 @@
             <div class="role-name">${getRoleName(meeting.roles['ah-counter-grammarian'] || meeting.roles['ah-counter/grammarian'])}</div>
         </div>
         <div class="role-item">
-            <div class="role-title">Timer</div>
+            <div class="role-title">Timer</a></div>
             <div class="role-name">${getRoleName(meeting.roles.timer)}</div>
         </div>
         <div class="role-item">
@@ -3691,6 +3717,181 @@
             // Show home section by default
             showSection('home');
         });
+        // ===== Speech Log Feature =====
+        let allSpeechData = [];
+        let selectedMembers = [];
+
+        async function loadSpeechLog() {
+            const display = document.getElementById('speechLogDisplay');
+            if (!display) return;
+            
+            try {
+                const response = await fetch('/api/speech-log/index');
+                if (!response.ok) throw new Error('Failed to load speech log');
+                allSpeechData = await response.json();
+                
+                // Build member list for search
+                allMemberNames = [...new Set(allSpeechData.map(s => s.speaker_name))].sort();                
+                renderSpeechLog(allSpeechData);
+            } catch (err) {
+                display.innerHTML = `<p style="color: red;">Error loading speech log: ${err.message}</p>`;
+            }
+        }
+
+        var allMemberNames = [];
+
+        function searchSpeechMembers(query) {
+            var dropdown = document.getElementById('speechMemberDropdown');
+            if (!query || query.length === 0) {
+                dropdown.style.display = 'none';
+                return;
+            }
+            var matches = allMemberNames.filter(function(name) {
+                return name.toLowerCase().indexOf(query.toLowerCase()) !== -1 && selectedMembers.indexOf(name) === -1;
+            });
+            if (matches.length === 0) {
+                dropdown.style.display = 'none';
+                return;
+            }
+            dropdown.innerHTML = matches.map(function(name) {
+                return '<div onclick="addSpeechMember(\'' + name.replace(/'/g, "\\'") + '\')" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 14px;" onmouseover="this.style.background=\'#e3f2fd\'" onmouseout="this.style.background=\'white\'">' + name + '</div>';
+            }).join('');
+            dropdown.style.display = 'block';
+        }
+
+        function addSpeechMember(name) {
+            if (selectedMembers.indexOf(name) === -1) {
+                selectedMembers.push(name);
+            }
+            document.getElementById('speechMemberSearch').value = '';
+            document.getElementById('speechMemberDropdown').style.display = 'none';
+            renderMemberChips();
+            var filtered = allSpeechData.filter(function(s) { return selectedMembers.indexOf(s.speaker_name) !== -1; });
+            renderSpeechLog(filtered);
+        }
+
+        function removeSpeechMember(name) {
+            selectedMembers = selectedMembers.filter(function(n) { return n !== name; });
+            renderMemberChips();
+            if (selectedMembers.length === 0) {
+                renderSpeechLog(allSpeechData);
+            } else {
+                var filtered = allSpeechData.filter(function(s) { return selectedMembers.indexOf(s.speaker_name) !== -1; });
+                renderSpeechLog(filtered);
+            }
+        }
+
+        function renderMemberChips() {
+            var container = document.getElementById('selectedMemberChips');
+            container.innerHTML = selectedMembers.map(function(name) {
+                return '<span style="display: inline-flex; align-items: center; gap: 6px; background: #e3f2fd; color: #1565c0; padding: 4px 10px; border-radius: 16px; font-size: 13px;">' + name + ' <span onclick="removeSpeechMember(\'' + name.replace(/'/g, "\\'") + '\')" style="cursor: pointer; font-weight: bold; color: #d32f2f; font-size: 16px;">&times;</span></span>';
+            }).join('');
+        }
+
+        function showAllSpeechMembers() {
+            selectedMembers = [];
+            document.getElementById('speechMemberSearch').value = '';
+            renderMemberChips();
+            renderSpeechLog(allSpeechData);
+        }
+
+        function clearSpeechMemberSelection() {
+            selectedMembers = [];
+            document.getElementById('speechMemberSearch').value = '';
+            renderMemberChips();
+            document.getElementById('speechLogDisplay').innerHTML = '<p>Search for a member above or click "Show All" to view all speeches.</p>';
+            document.addEventListener('click', function(e) {
+            if (!e.target.closest('#speechMemberSearch') && !e.target.closest('#speechMemberDropdown')) {
+                document.getElementById('speechMemberDropdown').style.display = 'none';
+            }
+        });
+        }
+
+        function renderSpeechLog(data) {
+            const display = document.getElementById('speechLogDisplay');
+            
+            if (data.length === 0) {
+                display.innerHTML = '<p>No speeches found.</p>';
+                return;
+            }
+            
+            // Group by member
+            const grouped = {};
+            data.forEach(speech => {
+                if (!grouped[speech.speaker_name]) {
+                    grouped[speech.speaker_name] = {
+                        speaker_id: speech.speaker_id,
+                        speeches: []
+                    };
+                }
+                grouped[speech.speaker_name].speeches.push(speech);
+            });
+            
+            // Sort member names alphabetically
+            const sortedNames = Object.keys(grouped).sort();
+            
+            let html = '';
+            sortedNames.forEach(name => {
+                const member = grouped[name];
+                const canEdit = currentUser && (currentUser.isAdmin || currentUser.id === member.speaker_id);
+                
+                html += `<div class="role-card" style="margin-bottom: 1.5rem;">`;
+                html += `<h4 style="margin-bottom: 0.5rem;">${name}</h4>`;
+                html += `<table style="width: 100%; border-collapse: collapse;">`;
+                html += `<thead><tr style="background: #f5f5f5;">`;
+                html += `<th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Date</th>`;
+                html += `<th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Speech Title</th>`;
+                html += `<th style="padding: 8px; text-align: center; border-bottom: 2px solid #ddd;">Logged in Pathways</th>`;
+                html += `</tr></thead><tbody>`;
+                
+                member.speeches.forEach(speech => {
+                    const checked = speech.logged_in_pathways ? 'checked' : '';
+                    const disabled = canEdit ? '' : 'disabled';
+                    const dateFormatted = new Date(speech.meeting_date + 'T00:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+                    
+                    html += `<tr style="border-bottom: 1px solid #eee;">`;
+                    html += `<td style="padding: 8px;">${dateFormatted}</td>`;
+                    html += `<td style="padding: 8px;">${speech.speech_title || 'TBD'}</td>`;
+                    var bgColor = speech.logged_in_pathways ? '#4caf50' : '#f44336';
+                    var label = speech.logged_in_pathways ? '✔' : '✘';
+                    html += '<td style="padding: 8px; text-align: center;">';
+                    html += '<span onclick="' + (canEdit ? 'toggleSpeechLogged(' + speech.speech_id + ', this)' : '') + '" style="display: inline-block; width: 32px; height: 32px; line-height: 32px; border-radius: 6px; background:' + bgColor + '; color: white; font-size: 18px; font-weight: bold; cursor:' + (canEdit ? 'pointer' : 'not-allowed') + '; user-select: none;">' + label + '</span>';
+                    html += `</td>`;
+                    html += `</tr>`;
+                });
+                
+                html += `</tbody></table></div>`;
+            });
+            display.innerHTML = html;
+        }
+        async function toggleSpeechLogged(speechId, el) {
+            var token = localStorage.getItem('authToken');
+            if (!token) {
+                alert('Please log in to update speech status.');
+                return;
+            }
+            try {
+                var response = await fetch('/api/speech-log/toggle?id=' + speechId, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                if (!response.ok) {
+                    var err = await response.json();
+                    throw new Error(err.error || 'Failed to update');
+                }
+                var speech = allSpeechData.find(function(s) { return s.speech_id === speechId; });
+                if (speech) {
+                    speech.logged_in_pathways = speech.logged_in_pathways ? 0 : 1;
+                    el.style.background = speech.logged_in_pathways ? '#4caf50' : '#f44336';
+                    el.textContent = speech.logged_in_pathways ? '✔' : '✘';
+                }
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        }
 
         // Load Participation Tracker
         async function loadParticipationTracker() {

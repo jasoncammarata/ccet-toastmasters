@@ -40,6 +40,8 @@ app.all('/api/members/index', convertHandler(require('./api/members/index')));
 app.all('/api/members/:id', convertHandler(require('./api/members/[id]')));
 app.all('/api/applications/index', convertHandler(require('./api/applications/index')));
 app.all('/api/participation/tracker', convertHandler(require('./api/participation/tracker')));
+app.all('/api/speech-log/index', convertHandler(require('./api/speech-log/index')));
+app.all('/api/speech-log/toggle', convertHandler(require('./api/speech-log/toggle')));
 
 // Catch all route - must be last
 app.get('/*', (req, res) => {
