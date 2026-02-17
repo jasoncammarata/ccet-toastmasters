@@ -1441,9 +1441,14 @@
                     </div>
                 </div>
                 <div style="font-size: 2rem; color: #4caf50; padding: 0 10px;">➜</div>
-                <div style="background: #e8f5e9; border: 2px solid #4caf50; border-radius: 10px; padding: 18px 22px; text-align: center; width: 240px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                    <div style="font-size: 1.8rem; margin-bottom: 6px;">3️⃣</div>
-                    <strong style="font-size: 1rem;">Log in and Change your <span style="display: inline-block; width: 20px; height: 20px; line-height: 20px; border-radius: 4px; background: #f44336; color: white; font-size: 12px; font-weight: bold; text-align: center; vertical-align: middle;">✘</span> into a <span style="display: inline-block; width: 20px; height: 20px; line-height: 20px; border-radius: 4px; background: #4caf50; color: white; font-size: 12px; font-weight: bold; text-align: center; vertical-align: middle;">✔</span> - Great Work!</strong>
+                <div style="border-radius: 10px; overflow: hidden; width: 240px; min-height: 120px; display: flex; flex-direction: column; border: 2px solid #4caf50;">
+                    <div style="background: #e8f5e9; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px 22px 6px;">
+                        <div style="font-size: 1.8rem; margin-bottom: 6px;">3️⃣</div>
+                        <strong style="font-size: 1rem;">Log in and Change your <span style="display: inline-block; width: 20px; height: 20px; line-height: 20px; border-radius: 4px; background: #f44336; color: white; font-size: 12px; font-weight: bold; text-align: center; vertical-align: middle;">✘</span> into a <span style="display: inline-block; width: 20px; height: 20px; line-height: 20px; border-radius: 4px; background: #4caf50; color: white; font-size: 12px; font-weight: bold; text-align: center; vertical-align: middle;">✔</span> - Great Work!</strong>
+                    </div>
+                    <div style="background: #c8e6c9; display: flex; align-items: center; justify-content: center; padding: 10px 22px;">
+                        <span onclick="showLogin()" style="display: inline-block; padding: 8px 18px; background: #4caf50; color: white; font-weight: bold; font-size: 0.9rem; border-radius: 6px; text-decoration: none; cursor: pointer;">Member Login</span>
+                    </div>
                 </div>
             </div>
             <div style="text-align: center; margin-bottom: 1.5rem; padding: 12px 20px; background: #f5f5f5; border-radius: 8px; font-size: 1rem;">
@@ -1458,16 +1463,17 @@
             <div id="speechLogContainer" style="margin-bottom: 2rem;">
                 <h2 style="font-size: 1.8rem;">📋 Speech Log</h2>
                 <p>Track which speeches have been logged in Pathways. Members can mark their own speeches as logged.</p>
-                <div style="margin-bottom: 1rem;">
-                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                        <div style="position: relative; flex: 1; max-width: 350px;">
-                            <input type="text" id="speechMemberSearch" placeholder="Search for a member..." autocomplete="off" oninput="searchSpeechMembers(this.value)" onfocus="searchSpeechMembers(this.value)" style="width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
-                            <div id="speechMemberDropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 4px 4px; max-height: 200px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
+                <div style="margin-bottom: 1.5rem; background: #e3f2fd; border: 2px solid #1976d2; border-radius: 10px; padding: 20px;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <div style="position: relative; flex: 1; max-width: 400px;">
+                            <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-size: 18px;">🔍</span>
+                            <input type="text" id="speechMemberSearch" placeholder="Search for a member..." autocomplete="off" oninput="searchSpeechMembers(this.value)" onfocus="searchSpeechMembers(this.value)" style="width: 100%; padding: 12px 12px 12px 40px; border: 2px solid #1976d2; border-radius: 8px; font-size: 16px; background: white;">
+                            <div id="speechMemberDropdown" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #1976d2; border-top: none; border-radius: 0 0 8px 8px; max-height: 200px; overflow-y: auto; z-index: 100; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
                         </div>
-                        <button onclick="showAllSpeechMembers()" class="btn-primary" style="padding: 8px 16px; background: #1976d2;">Show All</button>
-                        <button onclick="clearSpeechMemberSelection()" class="btn-primary" style="padding: 8px 16px; background: #757575;">Clear</button>
+                        <button onclick="showAllSpeechMembers()" class="btn-primary" style="padding: 10px 20px; background: #1976d2; font-size: 15px; border-radius: 8px;">Show All</button>
+                        <button onclick="clearSpeechMemberSelection()" class="btn-primary" style="padding: 10px 20px; background: #757575; font-size: 15px; border-radius: 8px;">Clear</button>
                     </div>
-                    <div id="selectedMemberChips" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;"></div>
+                    <div id="selectedMemberChips" style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px;"></div>
                 </div>
                 <div id="speechLogDisplay">
                     <div class="loading-container">
