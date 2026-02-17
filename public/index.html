@@ -1423,12 +1423,40 @@
         
         <!-- Log My Speech Section -->
         <section id="education" class="content-section">
-            <h2>Toastmasters: Pathways & Base Camp</h2>
-            <p>Everything you need to select a path and track your progress.</p>
-            
+            <h1 style="font-size: 2.2rem;">Log My Speech</h1>
+            <p style="font-size: 1.15rem;"><strong>Follow this workflow, help yourself stay on track with your Pathway, and help our Club!</strong></p>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 0; margin: 1.5rem 0; flex-wrap: wrap;">
+                <div style="background: #e3f2fd; border: 2px solid #1976d2; border-radius: 10px; padding: 18px 22px; text-align: center; width: 240px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div style="font-size: 1.8rem; margin-bottom: 6px;">1️⃣</div>
+                    <strong style="font-size: 1rem;">Find Your Speeches using the Speech Log below</strong>
+                </div>
+                <div style="font-size: 2rem; color: #1976d2; padding: 0 10px;">➜</div>
+                <div style="border-radius: 10px; overflow: hidden; width: 240px; min-height: 120px; display: flex; flex-direction: column; border: 2px solid #1976d2;">
+                    <div style="background: #e3f2fd; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px 22px 6px;">
+                        <div style="font-size: 1.8rem; margin-bottom: 6px;">2️⃣</div>
+                        <strong style="font-size: 1rem;">Log Your Speech in Base Camp</strong>
+                    </div>
+                    <div style="background: #e8f5e9; display: flex; align-items: center; justify-content: center; padding: 10px 22px;">
+                        <a href="https://app.basecamp.toastmasters.org/dashboard" target="_blank" style="display: inline-block; padding: 8px 18px; background: #1976d2; color: white; font-weight: bold; font-size: 0.9rem; border-radius: 6px; text-decoration: none; cursor: pointer;">Go to Base Camp</a>
+                    </div>
+                </div>
+                <div style="font-size: 2rem; color: #4caf50; padding: 0 10px;">➜</div>
+                <div style="background: #e8f5e9; border: 2px solid #4caf50; border-radius: 10px; padding: 18px 22px; text-align: center; width: 240px; min-height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                    <div style="font-size: 1.8rem; margin-bottom: 6px;">3️⃣</div>
+                    <strong style="font-size: 1rem;">Log in and Change your <span style="display: inline-block; width: 20px; height: 20px; line-height: 20px; border-radius: 4px; background: #f44336; color: white; font-size: 12px; font-weight: bold; text-align: center; vertical-align: middle;">✘</span> into a <span style="display: inline-block; width: 20px; height: 20px; line-height: 20px; border-radius: 4px; background: #4caf50; color: white; font-size: 12px; font-weight: bold; text-align: center; vertical-align: middle;">✔</span> - Great Work!</strong>
+                </div>
+            </div>
+            <div style="text-align: center; margin-bottom: 1.5rem; padding: 12px 20px; background: #f5f5f5; border-radius: 8px; font-size: 1rem;">
+            If you need any assistance, please contact your <span onclick="document.getElementById('vpeContactBox').style.display = document.getElementById('vpeContactBox').style.display === 'none' ? 'block' : 'none';" style="color: #1976d2; font-weight: bold; text-decoration: underline; cursor: pointer;">Vice President of Education</span>.
+            </div>
+            <div id="vpeContactBox" style="display: none; text-align: center; margin-bottom: 1.5rem; padding: 16px 20px; background: #e3f2fd; border: 2px solid #1976d2; border-radius: 8px;">
+                <p style="margin: 0 0 8px; font-weight: bold;">Crystal City Evening Toastmasters</p>
+                <p style="margin: 0 0 8px;">Email: <a href="mailto:CrystalCityEveningTM@gmail.com?subject=VP%20Education%20-%20Help%20me%20Log%20my%20Speech!" style="color: #1976d2;">CrystalCityEveningTM@gmail.com</a></p>
+                <p style="margin: 0;">Subject: <strong>VP Education - Help me Log my Speech!</strong></p>
+            </div>
             <!-- Speech Log Feature -->
             <div id="speechLogContainer" style="margin-bottom: 2rem;">
-                <h3>📋 Speech Log</h3>
+                <h2 style="font-size: 1.8rem;">📋 Speech Log</h2>
                 <p>Track which speeches have been logged in Pathways. Members can mark their own speeches as logged.</p>
                 <div style="margin-bottom: 1rem;">
                     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
@@ -3836,7 +3864,7 @@
                 const canEdit = currentUser && (currentUser.isAdmin || currentUser.id === member.speaker_id);
                 
                 html += `<div class="role-card" style="margin-bottom: 1.5rem;">`;
-                html += `<h4 style="margin-bottom: 0.5rem;">${name}</h4>`;
+                html += `<h3 style="margin-bottom: 0.5rem; font-size: 1.4rem;">${name}</h3>`;
                 html += `<table style="width: 100%; border-collapse: collapse;">`;
                 html += `<thead><tr style="background: #f5f5f5;">`;
                 html += `<th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Date</th>`;
