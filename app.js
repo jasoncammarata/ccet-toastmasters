@@ -45,6 +45,10 @@ app.all('/api/speech-log/toggle', convertHandler(require('./api/speech-log/toggl
 app.all('/api/attendance/index', convertHandler(require('./api/attendance/index')));
 app.all('/api/attendance/table-topics', convertHandler(require('./api/attendance/table-topics')));
 
+app.get('/checkin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'checkin.html'));
+});
+
 // Catch all route - must be last
 app.get('/*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
