@@ -44,6 +44,7 @@ app.all('/api/speech-log/index', convertHandler(require('./api/speech-log/index'
 app.all('/api/speech-log/toggle', convertHandler(require('./api/speech-log/toggle')));
 app.all('/api/attendance/index', convertHandler(require('./api/attendance/index')));
 app.all('/api/attendance/table-topics', convertHandler(require('./api/attendance/table-topics')));
+app.all('/api/attendance/qrcode', convertHandler(require('./api/attendance/qrcode')));
 
 app.get('/checkin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'checkin.html'));
