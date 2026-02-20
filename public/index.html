@@ -1096,6 +1096,18 @@
                     </div>
                 </div>
             </div>
+        <!-- Meeting Day Check-In -->
+            <div id="meetingDayCheckin" style="display: none; margin-top: 2rem; text-align: center;">
+                <div class="role-card" style="max-width: 600px; margin: 0 auto; background: #e8f5e9; border-left-color: #4caf50;">
+                    <h3>📋 Today's Meeting Check-In</h3>
+                    <p id="checkinMeetingDate" style="font-size: 1.1rem; margin-bottom: 1rem;"></p>
+                    <div id="checkinQRCode" style="margin: 1rem 0;"></div>
+                    <p style="color: #666; margin-bottom: 1rem;">Scan the QR code or click the button below to check in</p>
+                    <button id="checkinButton" onclick="" class="btn-primary" style="width: auto; padding: 12px 24px; background: #4caf50;">
+                        ✅ Check In Now
+                    </button>
+                </div>
+            </div>
         </section>
 
         <!-- Admin Portal Section -->
@@ -3735,6 +3747,37 @@
             }
         }
 
+        // Check if today is a meeting day and show check-in
+        async function checkMeetingDayCheckin() {
+            try {
+                const response = await fetch('/api/meetings/index');
+                const meetings = await response.json();
+                const today = new Date().toISOString().split('T')[0];
+                const todayMeeting = meetings.find(m => m.date === today);
+                
+                if (todayMeeting) {
+                    // Fetch QR code
+                    const qrRes = await fetch(`/api/attendance/qrcode?meeting_id=${todayMeeting.id}`);
+                    const qrData = await qrRes.json();
+                    
+                    const checkinDiv = document.getElementById('meetingDayCheckin');
+                    const dateEl = document.getElementById('checkinMeetingDate');
+                    const qrEl = document.getElementById('checkinQRCode');
+                    const btnEl = document.getElementById('checkinButton');
+                    
+                    const meetingDate = new Date(todayMeeting.date + 'T00:00:00');
+                    dateEl.textContent = meetingDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+                    
+                    qrEl.innerHTML = `<img src="${qrData.qrCode}" alt="Check-in QR Code" style="max-width: 250px;">`;
+                    btnEl.onclick = () => window.open(qrData.checkinUrl, '_blank');
+                    
+                    checkinDiv.style.display = 'block';
+                }
+            } catch (e) {
+                console.error('Meeting day check-in error:', e);
+            }
+        }
+
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', async () => {
             console.log('Page loaded, initializing...');
@@ -3750,6 +3793,8 @@
             
             // Show home section by default
             showSection('home');
+            // Check if today is a meeting day
+            await checkMeetingDayCheckin();
         });
         // ===== Speech Log Feature =====
         let allSpeechData = [];
