@@ -90,17 +90,6 @@
         }
         .badge-member { background: #e3f2fd; color: #1976d2; }
         .badge-guest { background: #e8f5e9; color: #2e7d32; }
-        .tt-checkbox { width: 20px; height: 20px; cursor: pointer; }
-        .tt-label { font-size: 0.85rem; color: #666; margin-left: 0.5rem; }
-        .locked-notice {
-            text-align: center;
-            padding: 0.75rem;
-            background: #fff3cd;
-            border-radius: 8px;
-            color: #856404;
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-        }
         .hidden { display: none; }
     </style>
 </head>
@@ -191,7 +180,6 @@
         <!-- Attendance list (shown after check-in) -->
         <div id="attendanceSection" class="card hidden">
             <h2>📋 Attendance (<span id="attendanceCount">0</span>)</h2>
-            <div id="tableTopicsNotice"></div>
             <div id="attendanceList" class="attendance-list"></div>
         </div>
     </div>
@@ -201,7 +189,6 @@
         let meetingId = null;
         let authToken = localStorage.getItem('authToken');
         let currentUser = null;
-        let isLocked = false;
         let checkedIn = false;
 
         // Get meeting ID from URL params
@@ -440,61 +427,21 @@
 
                 const res = await fetch(`${API_BASE}/attendance/index?meeting_id=${meetingId}`, { headers });
                 const data = await res.json();
-                isLocked = data.isLocked;
 
                 const list = document.getElementById('attendanceList');
                 const count = document.getElementById('attendanceCount');
                 count.textContent = data.attendance.length;
-
-                if (isLocked) {
-                    document.getElementById('tableTopicsNotice').innerHTML =
-                        '<div class="locked-notice">🔒 Table Topics voting is locked for this meeting</div>';
-                }
-
+                
                 list.innerHTML = data.attendance.map(a => `
                     <div class="attendance-item">
                         <div>
                             <span class="attendance-name">${a.name}</span>
                             <span class="attendance-badge ${a.type === 'member' ? 'badge-member' : 'badge-guest'}">${a.type}</span>
                         </div>
-                        <div style="display: flex; align-items: center;">
-                            <input type="checkbox" class="tt-checkbox"
-                                ${a.is_table_topics_speaker ? 'checked' : ''}
-                                ${isLocked && !(currentUser?.role === 'admin') ? 'disabled' : ''}
-                                ${!checkedIn ? 'disabled' : ''}
-                                onchange="toggleTableTopics(${a.member_id || 'null'}, ${a.guest_id || 'null'}, this)"
-                            >
-                            <span class="tt-label">TT Speaker</span>
-                        </div>
                     </div>
                 `).join('');
             } catch (e) {
                 console.error('Failed to load attendance:', e);
-            }
-        }
-
-        async function toggleTableTopics(memberId, guestId, checkbox) {
-            try {
-                const headers = { 'Content-Type': 'application/json' };
-                if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-
-                const body = { meeting_id: parseInt(meetingId) };
-                if (memberId) body.member_id = memberId;
-                if (guestId) body.guest_id = guestId;
-
-                const res = await fetch(`${API_BASE}/attendance/table-topics`, {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify(body)
-                });
-                const data = await res.json();
-                if (!res.ok) {
-                    checkbox.checked = !checkbox.checked;
-                    alert(data.error || 'Failed to update');
-                }
-            } catch (e) {
-                checkbox.checked = !checkbox.checked;
-                alert('Failed to update: ' + e.message);
             }
         }
 
