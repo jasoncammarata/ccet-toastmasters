@@ -39,11 +39,12 @@ module.exports = async (req, res) => {
         ORDER BY a.checked_in_at ASC
       `).all(meetingId);
 
-      // Check if table topics is locked (past midnight on meeting date)
+      // Check if table topics is locked (past midnight Eastern on meeting date)
       const meeting = db.prepare('SELECT date FROM meetings WHERE id = ?').get(meetingId);
       const now = new Date();
-      const meetingDate = new Date(meeting.date + 'T23:59:59');
-      const isLocked = now > meetingDate;
+      const estNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+      const meetingEnd = new Date(meeting.date + 'T23:59:59');
+      const isLocked = estNow > meetingEnd;
 
       // Only include guest contact info for admins
       const token = req.headers.authorization?.replace('Bearer ', '');

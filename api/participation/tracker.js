@@ -4,7 +4,9 @@ module.exports = async (req, res) => {
   if (req.method === 'GET') {
     // Get date range from query parameters
     const startDate = req.query.startDate || '2025-10-01';
-    const endDate = req.query.endDate || new Date().toISOString().split('T')[0]; // Default to today
+    const now = new Date();
+    const estNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+    const endDate = req.query.endDate || estNow.getFullYear() + '-' + String(estNow.getMonth() + 1).padStart(2, '0') + '-' + String(estNow.getDate()).padStart(2, '0');
         
     try {
       // Get all active members

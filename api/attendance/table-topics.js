@@ -16,8 +16,9 @@ module.exports = async (req, res) => {
   }
 
   const now = new Date();
-  const meetingDate = new Date(meeting.date + 'T23:59:59');
-  const isLocked = now > meetingDate;
+  const estNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const meetingEnd = new Date(meeting.date + 'T23:59:59');
+  const isLocked = estNow > meetingEnd;
 
   // POST - toggle table topics speaker
   if (req.method === 'POST') {
