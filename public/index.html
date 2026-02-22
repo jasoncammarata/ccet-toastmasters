@@ -2115,13 +2115,29 @@
             `;
         }
 
-        function openPresentationMode() {
+        async function openPresentationMode() {
             if (!selectedMeetingId || !meetings[selectedMeetingId]) {
                 alert('Please select a meeting first.');
                 return;
             }
             
             const meeting = meetings[selectedMeetingId];
+            // Fetch QR code and attendance for presentation
+            let qrDataUrl = '';
+            let attendanceList = [];
+            try {
+                const qrRes = await fetch(`/api/attendance/qrcode?meeting_id=${selectedMeetingId}`);
+                const qrData = await qrRes.json();
+                qrDataUrl = qrData.qrCode || '';
+            } catch (e) { console.error('QR fetch error:', e); }
+            try {
+                const token = apiClient.token;
+                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+                const attRes = await fetch(`/api/attendance/index?meeting_id=${selectedMeetingId}`, { headers });
+                const attData = await attRes.json();
+                attendanceList = attData.attendance || [];
+            } catch (e) { console.error('Attendance fetch error:', e); }            
+
             // Helper to extract role name
             const getRoleName = (role) => {
                 if (!role) return 'Available';
@@ -2250,6 +2266,23 @@
         </div>
     </div>
     ` : ''}
+    <div style="display: flex; gap: 2rem; margin-top: 3rem;">
+        <div style="flex: 1; text-align: center; padding: 2rem; background: #e8f5e9; border-radius: 8px; border: 3px solid #4caf50;">
+            <div style="font-size: 1.5rem; font-weight: bold; color: #2e7d32; margin-bottom: 1rem;">
+                📋 Check In
+            </div>
+            ${qrDataUrl ? `<img src="${qrDataUrl}" alt="Check-in QR Code" style="max-width: 200px;">` : '<p>QR code unavailable</p>'}
+            <div style="font-size: 1rem; color: #666; margin-top: 0.5rem;">Scan to check in</div>
+        </div>
+        <div style="flex: 1; padding: 2rem; background: #f5f5f5; border-radius: 8px;">
+            <div style="font-size: 1.5rem; font-weight: bold; color: #1976d2; margin-bottom: 1rem;">
+                👋 Guests
+            </div>
+            ${attendanceList.filter(a => a.type === 'guest').length > 0 
+                ? attendanceList.filter(a => a.type === 'guest').map(a => `<div style="font-size: 1.3rem; padding: 0.5rem 0; border-bottom: 1px solid #ddd;">${a.name}</div>`).join('')
+                : '<div style="font-size: 1.2rem; color: #999;">No guests checked in yet</div>'}
+        </div>
+    </div>
 </body>
 
 </html>
