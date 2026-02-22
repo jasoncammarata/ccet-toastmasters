@@ -76,8 +76,7 @@ module.exports = async (req, res) => {
 
   // POST - check in to a meeting
   else if (req.method === 'POST') {
-    const { meeting_id, guest_name, guest_email, guest_phone } = req.body;
-
+    const { meeting_id, guest_name, guest_email, guest_phone, admin_member_email } = req.body;
     if (!meeting_id) {
       return res.status(400).json({ error: 'meeting_id is required' });
     }
@@ -85,6 +84,24 @@ module.exports = async (req, res) => {
     try {
       const token = req.headers.authorization?.replace('Bearer ', '');
       const user = token ? verifyToken(token) : null;
+
+      // Admin checking in a member by email
+      if (admin_member_email && user && user.role === 'admin') {
+        const member = db.prepare('SELECT id, name FROM members WHERE email = ? COLLATE NOCASE').get(admin_member_email);
+        if (!member) {
+          return res.status(404).json({ error: 'Member not found with that email' });
+        }
+        const existing = db.prepare(
+          'SELECT id FROM attendance WHERE meeting_id = ? AND member_id = ?'
+        ).get(meeting_id, member.id);
+        if (existing) {
+          return res.status(400).json({ error: 'Member already checked in' });
+        }
+        db.prepare(
+          'INSERT INTO attendance (meeting_id, member_id) VALUES (?, ?)'
+        ).run(meeting_id, member.id);
+        return res.json({ success: true, type: 'member', name: member.name });
+      }
 
       // Member check-in
       if (user) {

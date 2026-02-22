@@ -105,6 +105,7 @@
             <h2>How would you like to check in?</h2>
             <button class="btn btn-member" onclick="chooseMember()">👤 I'm a Member</button>
             <button class="btn btn-guest" onclick="chooseGuest()">👋 I'm a Guest</button>
+            <button class="btn btn-secondary" onclick="chooseAdmin()" style="margin-top: 0.5rem;">🔐 Admin Sign In for Member or Guest</button>
         </div>
 
         <!-- Step 2a: Member login -->
@@ -166,6 +167,50 @@
             </div>
             <div id="guestNewError" class="error hidden"></div>
             <button class="btn btn-checkin" onclick="guestCheckin(false)">✅ Check In</button>
+            <button class="btn btn-secondary" onclick="goBack()">← Back</button>
+        </div>
+
+        <!-- Step 3a: Admin login -->
+        <div id="stepAdminLogin" class="card hidden">
+            <h2>🔐 Admin Login</h2>
+            <div class="form-group">
+                <label>Email / Username</label>
+                <input type="text" id="adminEmail" placeholder="Admin email">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="adminPassword" placeholder="Admin password">
+            </div>
+            <div id="adminLoginError" class="error hidden"></div>
+            <button class="btn btn-member" onclick="adminLogin()">Log In</button>
+            <button class="btn btn-secondary" onclick="goBack()">← Back</button>
+        </div>
+
+        <!-- Step 3b: Admin check-in panel -->
+        <div id="stepAdminPanel" class="card hidden">
+            <h2>🔐 Admin Check-In</h2>
+            <p style="color: #666; margin-bottom: 1rem;">Check in a member or guest on their behalf.</p>
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="adminCheckinName" placeholder="Full name">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="adminCheckinEmail" placeholder="Email address">
+            </div>
+            <div class="form-group">
+                <label>Phone (optional)</label>
+                <input type="tel" id="adminCheckinPhone" placeholder="Phone number">
+            </div>
+            <div class="form-group">
+                <label>Type</label>
+                <select id="adminCheckinType" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;">
+                    <option value="member">Member</option>
+                    <option value="guest">Guest</option>
+                </select>
+            </div>
+            <div id="adminCheckinError" class="error hidden"></div>
+            <button class="btn btn-checkin" onclick="adminCheckinPerson()">✅ Check In</button>
             <button class="btn btn-secondary" onclick="goBack()">← Back</button>
         </div>
 
@@ -278,6 +323,107 @@
         function chooseGuest() {
             hideAll();
             document.getElementById('stepGuestEmail').classList.remove('hidden');
+        }
+
+        function chooseAdmin() {
+            hideAll();
+            // If already logged in as admin, go straight to panel
+            if (authToken && currentUser && currentUser.role === 'admin') {
+                document.getElementById('stepAdminPanel').classList.remove('hidden');
+            } else {
+                document.getElementById('stepAdminLogin').classList.remove('hidden');
+            }
+        }
+
+        async function adminLogin() {
+            const email = document.getElementById('adminEmail').value.trim();
+            const password = document.getElementById('adminPassword').value;
+            const errorEl = document.getElementById('adminLoginError');
+            errorEl.classList.add('hidden');
+
+            if (!email || !password) {
+                errorEl.textContent = 'Please enter email and password';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+
+                const user = data.user || { id: data.id, name: data.name, email: data.email, role: data.role };
+                if (user.role !== 'admin') {
+                    throw new Error('Admin access required');
+                }
+
+                authToken = data.token;
+                currentUser = user;
+                hideAll();
+                document.getElementById('stepAdminPanel').classList.remove('hidden');
+            } catch (e) {
+                errorEl.textContent = e.message || 'Login failed';
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        async function adminCheckinPerson() {
+            const name = document.getElementById('adminCheckinName').value.trim();
+            const email = document.getElementById('adminCheckinEmail').value.trim();
+            const phone = document.getElementById('adminCheckinPhone').value.trim();
+            const type = document.getElementById('adminCheckinType').value;
+            const errorEl = document.getElementById('adminCheckinError');
+            errorEl.classList.add('hidden');
+
+            if (!name || !email) {
+                errorEl.textContent = 'Name and email are required';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            try {
+                if (type === 'member') {
+                    // Look up member by name and check them in
+                    const res = await fetch(`${API_BASE}/attendance/index`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify({ meeting_id: parseInt(meetingId), admin_member_email: email })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+                    showSuccess(name);
+                } else {
+                    // Check in as guest
+                    const res = await fetch(`${API_BASE}/attendance/index`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            meeting_id: parseInt(meetingId), 
+                            guest_name: name, 
+                            guest_email: email, 
+                            guest_phone: phone || null 
+                        })
+                    });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+                    showSuccess(name);
+                }
+                loadAttendance();
+                // Clear the form for next check-in
+                document.getElementById('adminCheckinName').value = '';
+                document.getElementById('adminCheckinEmail').value = '';
+                document.getElementById('adminCheckinPhone').value = '';
+            } catch (e) {
+                errorEl.textContent = e.message || 'Check-in failed';
+                errorEl.classList.remove('hidden');
+            }
         }
 
         async function memberLogin() {
