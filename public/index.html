@@ -2480,14 +2480,20 @@
                 actionButton = `<button class="signup-button" disabled title="Member login required">Sign Up</button>`;
             }
 
-            // Add TT Speaker Tracker button for Timer (visible to assigned Timer and admins)
-            if (roleId === 'timer' && currentUser) {
-                const isTimer = assignmentName && assignmentName === currentUser.name;
-                if (isTimer || currentUser.isAdmin) {
-                    actionButton += `<button class="edit-button" style="background: #ff9800; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer;" onclick="openTTTracker()">🎤 TT Tracker</button>`;
-                }
-            }
-            
+            // Add TT Tracker button on Timer row when Timer is assigned
+            const ttTrackerButton = (roleId === 'timer' && assignmentName) 
+                ? `<button style="margin-left: 1rem; background: #ff9800; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;" onclick="openTTTracker()">🎤 TT Tracker</button>` 
+                : '';
+
+            return `
+                <div class="agenda-line">
+                    ${roleDisplay}${ttTrackerButton}
+                    <div class="agenda-assignment">
+                        ${actionButton}
+                    </div>
+                </div>
+            `;
+
             return `
                 <div class="agenda-line">
                     ${roleDisplay}
