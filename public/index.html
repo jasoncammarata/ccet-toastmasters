@@ -2073,8 +2073,7 @@
             const agendaDisplay = document.getElementById('agendaDisplay');
             if (agendaDisplay) {
                 agendaDisplay.innerHTML = generateAgendaHTML(meeting);
-                loadGuestList(selectedMeetingId);
-                loadTTSpeakersList(selectedMeetingId);
+                loadGuestList(selectedMeetingId).then(() => loadTTSpeakersList(selectedMeetingId));
             }
         }
 
@@ -2109,9 +2108,14 @@
                         ${generateAgendaLine('General Evaluator', meeting.roles['general-evaluator'] || meeting.roles.evaluator, 'evaluator')}
                         ${generateAgendaLine('Ah-Counter/Grammarian', meeting.roles['ah-counter-grammarian'] || meeting.roles['ah-counter/grammarian'], 'ah-counter-grammarian', meeting)}
                         ${generateAgendaLine('Timer', meeting.roles.timer, 'timer')}
-                        
-                        <div class="agenda-line section-header">
+
+              <div class="agenda-line section-header">
                             <span>🎤 Prepared Speeches</span>
+                        </div>
+                        ${generateSpeakerLine('Speaker#1', meeting.speakers[0], 0)}
+                        ${generateSpeakerLine('Speaker#2', meeting.speakers[1], 1)}
+                        ${generateSpeakerLine('Speaker#3', meeting.speakers[2], 2)}
+                        ${generateSpeakerLine('Speaker#4', meeting.speakers[3], 3)}
                         <div style="text-align: right; margin: 0.5rem 0 1rem;">
                             <button onclick="copySpeakerNames()" style="background: #1976d2; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">📋 Copy All Speakers</button>
                         </div>
