@@ -1418,6 +1418,7 @@
                     <div class="loading"></div>
                     <p>Loading meeting agenda...</p>
                 </div>
+            </div>
 
             <!-- TT Speaker Tracker Panel -->
             <div id="ttTrackerPanel" style="display: none; margin-top: 1.5rem;">
@@ -1431,7 +1432,6 @@
                         <p style="color: #999;">Loading attendance...</p>
                     </div>
                 </div>
-            </div>
             </div>
 
             <div id="visitorNote" class="role-card" style="display: none; margin-top: 2rem; background: #e3f2fd; border-left-color: #1976d2;">
@@ -2487,18 +2487,9 @@
 
             return `
                 <div class="agenda-line">
-                    ${roleDisplay}${ttTrackerButton}
-                    <div class="agenda-assignment">
-                        ${actionButton}
-                    </div>
-                </div>
-            `;
-
-            return `
-                <div class="agenda-line">
                     ${roleDisplay}
                     <div class="agenda-assignment">
-                        ${actionButton}
+                        ${ttTrackerButton}${actionButton}
                     </div>
                 </div>
             `;
