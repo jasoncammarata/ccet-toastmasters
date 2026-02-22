@@ -2255,32 +2255,39 @@
     </div>
     
     ${wordOfTheDay ? `
-    <div style="text-align: center; margin-top: 3rem; padding: 2rem; background: #fff3cd; border-radius: 8px; border: 3px solid #ffc107;">
-        <div style="font-size: 1.5rem; font-weight: bold; color: #856404; margin-bottom: 1rem;">
+    <div style="text-align: center; margin-top: 1.5rem; padding: 1rem; background: #fff3cd; border-radius: 8px; border: 2px solid #ffc107;">
+        <div style="font-size: 1.2rem; font-weight: bold; color: #856404; margin-bottom: 0.5rem;">
             ⭐ Word of the Day ⭐
         </div>
-        <div style="font-size: 2.5rem; font-weight: bold;">
+        <div style="font-size: 1.5rem; font-weight: bold;">
             <a href="https://www.google.com/search?q=define+${encodeURIComponent(wordOfTheDay)}" target="_blank" style="color: #1976d2; text-decoration: none;">
                 ${wordOfTheDay}
             </a>
         </div>
     </div>
     ` : ''}
-    <div style="display: flex; gap: 2rem; margin-top: 3rem;">
-        <div style="flex: 1; text-align: center; padding: 2rem; background: #e8f5e9; border-radius: 8px; border: 3px solid #4caf50;">
-            <div style="font-size: 1.5rem; font-weight: bold; color: #2e7d32; margin-bottom: 1rem;">
-                📋 Check In
-            </div>
-            ${qrDataUrl ? `<img src="${qrDataUrl}" alt="Check-in QR Code" style="max-width: 200px;">` : '<p>QR code unavailable</p>'}
-            <div style="font-size: 1rem; color: #666; margin-top: 0.5rem;">Scan to check in</div>
+    <div style="display: flex; gap: 1.5rem; margin-top: 1.5rem;">
+        <div style="text-align: center; padding: 1rem; background: #e8f5e9; border-radius: 8px; border: 2px solid #4caf50; width: 220px; flex-shrink: 0;">
+            <div style="font-size: 1.2rem; font-weight: bold; color: #2e7d32; margin-bottom: 0.5rem;">📋 Check In</div>
+            ${qrDataUrl ? `<img src="${qrDataUrl}" alt="Check-in QR Code" style="width: 180px;">` : '<p>QR unavailable</p>'}
+            <div style="font-size: 0.85rem; color: #666; margin-top: 0.3rem;">Scan to check in</div>
         </div>
-        <div style="flex: 1; padding: 2rem; background: #f5f5f5; border-radius: 8px;">
-            <div style="font-size: 1.5rem; font-weight: bold; color: #1976d2; margin-bottom: 1rem;">
-                👋 Guests
+        <div style="flex: 1; padding: 1rem; background: #f5f5f5; border-radius: 8px;">
+            <div style="font-size: 1.3rem; font-weight: bold; color: #1976d2; margin-bottom: 0.75rem;">📋 Attendance</div>
+            <div style="display: flex; gap: 1rem;">
+                <div style="flex: 1;">
+                    <div style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; color: #333; border-bottom: 2px solid #1976d2; padding-bottom: 0.25rem;">Members</div>
+                    ${attendanceList.filter(a => a.type === 'member').slice(0, Math.ceil(attendanceList.filter(a => a.type === 'member').length / 2)).map(a => `<div style="font-size: 1.1rem; padding: 0.3rem 0;">${a.name}</div>`).join('') || '<div style="color: #999;">—</div>'}
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; color: #333; border-bottom: 2px solid #1976d2; padding-bottom: 0.25rem;">Members</div>
+                    ${attendanceList.filter(a => a.type === 'member').slice(Math.ceil(attendanceList.filter(a => a.type === 'member').length / 2)).map(a => `<div style="font-size: 1.1rem; padding: 0.3rem 0;">${a.name}</div>`).join('') || '<div style="color: #999;">—</div>'}
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; color: #2e7d32; border-bottom: 2px solid #4caf50; padding-bottom: 0.25rem;">Guests</div>
+                    ${attendanceList.filter(a => a.type === 'guest').map(a => `<div style="font-size: 1.1rem; padding: 0.3rem 0;">${a.name}</div>`).join('') || '<div style="color: #999;">—</div>'}
+                </div>
             </div>
-            ${attendanceList.filter(a => a.type === 'guest').length > 0 
-                ? attendanceList.filter(a => a.type === 'guest').map(a => `<div style="font-size: 1.3rem; padding: 0.5rem 0; border-bottom: 1px solid #ddd;">${a.name}</div>`).join('')
-                : '<div style="font-size: 1.2rem; color: #999;">No guests checked in yet</div>'}
         </div>
     </div>
 </body>
