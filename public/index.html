@@ -2462,32 +2462,6 @@
         <button onclick="copyToClipboard('evaluators')" style="background: #1976d2; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem;">📋 Copy All Evaluators</button>
         <button onclick="copyToClipboard('ttSpeakers')" style="background: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem;">📋 Copy All TT Speakers</button>
     </div>
-<script>
-        var presentationData = JSON.parse('PRESENTER_DATA_PLACEHOLDER');
-        function copyToClipboard(type) {
-            var names = [];
-            var label = '';
-            if (type === 'speakers') { names = presentationData.speakers; label = 'Speaker'; }
-            else if (type === 'evaluators') { names = presentationData.evaluators; label = 'Evaluator'; }
-            else if (type === 'ttSpeakers') { names = presentationData.ttSpeakers; label = 'TT Speaker'; }
-            if (names.length === 0) {
-                alert('No ' + label.toLowerCase() + ' names to copy.');
-                return;
-            }
-            var text = names.join(String.fromCharCode(10));
-            navigator.clipboard.writeText(text).then(function() {
-                alert(label + ' names copied!' + String.fromCharCode(10) + String.fromCharCode(10) + text);
-            }).catch(function() {
-                var ta = document.createElement('textarea');
-                ta.value = text;
-                document.body.appendChild(ta);
-                ta.select();
-                document.execCommand('copy');
-                document.body.removeChild(ta);
-                alert(label + ' names copied!' + String.fromCharCode(10) + String.fromCharCode(10) + text);
-            });
-        }
-    </script>
 </body>
 
 </html>
@@ -2501,10 +2475,35 @@
             const evaluatorNames = meeting.evaluators.filter(e => e && e.name).map(e => e.name);
             const ttSpeakerNames = attendanceList.filter(a => a.is_table_topics_speaker).map(a => a.name);
             const presData = JSON.stringify({ speakers: speakerNames, evaluators: evaluatorNames, ttSpeakers: ttSpeakerNames });
-            presentationHTML = presentationHTML.replace('PRESENTER_DATA_PLACEHOLDER', presData.replace(/'/g, "\\'"));
-
             presentationWindow.document.write(presentationHTML);
             presentationWindow.document.close();
+
+            // Inject copy function into presentation window
+            const presWin = presentationWindow;
+            presWin.presentationData = { speakers: speakerNames, evaluators: evaluatorNames, ttSpeakers: ttSpeakerNames };
+            presWin.copyToClipboard = function(type) {
+                var names = [];
+                var label = '';
+                if (type === 'speakers') { names = presWin.presentationData.speakers; label = 'Speaker'; }
+                else if (type === 'evaluators') { names = presWin.presentationData.evaluators; label = 'Evaluator'; }
+                else if (type === 'ttSpeakers') { names = presWin.presentationData.ttSpeakers; label = 'TT Speaker'; }
+                if (names.length === 0) {
+                    alert('No ' + label.toLowerCase() + ' names to copy.');
+                    return;
+                }
+                var text = names.join(String.fromCharCode(10));
+                navigator.clipboard.writeText(text).then(function() {
+                    alert(label + ' names copied!' + String.fromCharCode(10) + String.fromCharCode(10) + text);
+                }).catch(function() {
+                    var ta = presWin.document.createElement('textarea');
+                    ta.value = text;
+                    presWin.document.body.appendChild(ta);
+                    ta.select();
+                    presWin.document.execCommand('copy');
+                    presWin.document.body.removeChild(ta);
+                    alert(label + ' names copied!' + String.fromCharCode(10) + String.fromCharCode(10) + text);
+                });
+            };
         }
         
         function generatePresentationSpeeches(meeting) {
