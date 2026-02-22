@@ -74,14 +74,23 @@ module.exports = async (req, res) => {
           WHERE t.member_id = ? AND m.date >= ? AND m.date <= ?
         `).get(member.id, startDate, endDate).count;
 
+        // Count TT Speeches (Table Topics Speaker)
+        const ttSpeechCount = db.prepare(`
+          SELECT COUNT(*) as count
+          FROM table_topics_speakers t
+          JOIN meetings m ON t.meeting_id = m.id
+          WHERE t.member_id = ? AND m.date >= ? AND m.date <= ?
+        `).get(member.id, startDate, endDate).count;
+
         // Calculate total contribution
-        const totalContribution = speechCount + evaluationCount + toastmasterCount + 
-                                 generalEvaluatorCount + tableTopicsCount + 
+        const totalContribution = speechCount + ttSpeechCount + evaluationCount + toastmasterCount +
+                                 generalEvaluatorCount + tableTopicsCount +
                                  grammarianCount + timerCount;
 
         participationData.push({
           name: member.name,
           speeches: speechCount,
+          ttSpeeches: ttSpeechCount,
           evaluations: evaluationCount,
           toastmaster: toastmasterCount,
           generalEvaluator: generalEvaluatorCount,
