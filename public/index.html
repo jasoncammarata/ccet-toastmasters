@@ -2073,6 +2073,7 @@
             const agendaDisplay = document.getElementById('agendaDisplay');
             if (agendaDisplay) {
                 agendaDisplay.innerHTML = generateAgendaHTML(meeting);
+                loadGuestList(selectedMeetingId);
             }
         }
 
@@ -2210,6 +2211,75 @@
                 checkbox.checked = !checkbox.checked;
                 alert('Failed to update: ' + e.message);
             }
+        }
+        
+        async function loadGuestList(meetingId) {
+            try {
+                const headers = {};
+                if (apiClient.token) headers['Authorization'] = `Bearer ${apiClient.token}`;
+
+                const res = await fetch(`/api/attendance/index?meeting_id=${meetingId}`, { headers });
+                const data = await res.json();
+                const attendance = data.attendance || [];
+                const guests = attendance.filter(a => a.type === 'guest');
+
+                if (guests.length === 0) return;
+
+                const isAdmin = currentUser && currentUser.isAdmin;
+
+                let guestHTML = `
+                    <div class="agenda-line section-header" style="margin-top: 1.5rem;">
+                        <span>👋 Guests (${guests.length})</span>
+                    </div>
+                `;
+
+                guests.forEach(g => {
+                    let guestInfo = `<span class="assignment-name">${g.name}</span>`;
+                    if (isAdmin && g.email) {
+                        guestInfo += `<span style="margin-left: 1rem; color: #666; font-size: 0.9rem;">${g.email}</span>`;
+                    }
+                    if (isAdmin && g.phone) {
+                        guestInfo += `<span style="margin-left: 1rem; color: #666; font-size: 0.9rem;">${g.phone}</span>`;
+                    }
+                    guestHTML += `
+                        <div class="agenda-line">
+                            <span class="agenda-role">${guestInfo}</span>
+                        </div>
+                    `;
+                });
+
+                if (isAdmin && guests.some(g => g.email)) {
+                    const emails = guests.filter(g => g.email).map(g => g.email).join(', ');
+                    guestHTML += `
+                        <div style="margin-top: 0.75rem; text-align: right;">
+                            <button onclick="copyGuestEmails('${emails.replace(/'/g, "\\'")}')" style="background: #1976d2; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">📋 Copy Guest Emails</button>
+                        </div>
+                    `;
+                }
+
+                // Append to agenda display
+                const agendaDisplay = document.getElementById('agendaDisplay');
+                if (agendaDisplay) {
+                    agendaDisplay.innerHTML += guestHTML;
+                }
+            } catch (e) {
+                console.error('Load guest list error:', e);
+            }
+        }
+
+        function copyGuestEmails(emails) {
+            navigator.clipboard.writeText(emails).then(() => {
+                alert('Guest emails copied to clipboard!');
+            }).catch(() => {
+                // Fallback
+                const textarea = document.createElement('textarea');
+                textarea.value = emails;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('Guest emails copied to clipboard!');
+            });
         }
 
         async function openPresentationMode() {
