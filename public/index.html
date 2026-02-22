@@ -2524,19 +2524,30 @@
             <div style="font-size: 1.3rem; font-weight: bold; color: #1976d2; margin-bottom: 0.75rem;">📋 Attendance</div>
             <div style="display: flex; gap: 1rem;">
                 <div style="flex: 1;">
-                    <div style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; color: #333; border-bottom: 2px solid #1976d2; padding-bottom: 0.25rem;">Members</div>
-                    ${attendanceList.filter(a => a.type === 'member').slice(0, Math.ceil(attendanceList.filter(a => a.type === 'member').length / 2)).map(a => `<div style="font-size: 1.1rem; padding: 0.3rem 0;">${a.name}</div>`).join('') || '<div style="color: #999;">—</div>'}
+                    <div style="font-weight: bold; font-size: 1rem; margin-bottom: 0.5rem; color: #333; border-bottom: 2px solid #1976d2; padding-bottom: 0.25rem;">Members</div>
+                    ${attendanceList.filter(a => a.type === 'member').filter((a, i, arr) => i < Math.ceil(arr.length / 4)).map(a => `<div style="font-size: 1rem; padding: 0.2rem 0;">${a.name}</div>`).join('') || '<div style="color: #999;">—</div>'}
                 </div>
                 <div style="flex: 1;">
-                    <div style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; color: #333; border-bottom: 2px solid #1976d2; padding-bottom: 0.25rem;">Members</div>
-                    ${attendanceList.filter(a => a.type === 'member').slice(Math.ceil(attendanceList.filter(a => a.type === 'member').length / 2)).map(a => `<div style="font-size: 1.1rem; padding: 0.3rem 0;">${a.name}</div>`).join('') || '<div style="color: #999;">—</div>'}
+                    <div style="font-weight: bold; font-size: 1rem; margin-bottom: 0.5rem; color: #333; border-bottom: 2px solid #1976d2; padding-bottom: 0.25rem;">&nbsp;</div>
+                    ${attendanceList.filter(a => a.type === 'member').filter((a, i, arr) => i >= Math.ceil(arr.length / 4) && i < Math.ceil(arr.length / 2)).map(a => `<div style="font-size: 1rem; padding: 0.2rem 0;">${a.name}</div>`).join('') || ''}
                 </div>
                 <div style="flex: 1;">
-                    <div style="font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; color: #2e7d32; border-bottom: 2px solid #4caf50; padding-bottom: 0.25rem;">Guests</div>
-                    ${attendanceList.filter(a => a.type === 'guest').map(a => `<div style="font-size: 1.1rem; padding: 0.3rem 0;">${a.name}</div>`).join('') || '<div style="color: #999;">—</div>'}
+                    <div style="font-weight: bold; font-size: 1rem; margin-bottom: 0.5rem; color: #333; border-bottom: 2px solid #1976d2; padding-bottom: 0.25rem;">&nbsp;</div>
+                    ${attendanceList.filter(a => a.type === 'member').filter((a, i, arr) => i >= Math.ceil(arr.length / 2) && i < Math.ceil(arr.length * 3 / 4)).map(a => `<div style="font-size: 1rem; padding: 0.2rem 0;">${a.name}</div>`).join('') || ''}
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-weight: bold; font-size: 1rem; margin-bottom: 0.5rem; color: #333; border-bottom: 2px solid #1976d2; padding-bottom: 0.25rem;">&nbsp;</div>
+                    ${attendanceList.filter(a => a.type === 'member').filter((a, i, arr) => i >= Math.ceil(arr.length * 3 / 4)).map(a => `<div style="font-size: 1rem; padding: 0.2rem 0;">${a.name}</div>`).join('') || ''}
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-weight: bold; font-size: 1rem; margin-bottom: 0.5rem; color: #2e7d32; border-bottom: 2px solid #4caf50; padding-bottom: 0.25rem;">Guests</div>
+                    ${attendanceList.filter(a => a.type === 'guest').map(a => `<div style="font-size: 1rem; padding: 0.2rem 0;">${a.name}</div>`).join('') || '<div style="color: #999;">—</div>'}
                 </div>
             </div>
         </div>
+    </div>
+    <div style="text-align: center; margin-top: 1.5rem; padding: 1rem;">
+        <button onclick="if(window.opener && !window.opener.closed) { window.opener.openPresentationMode(); window.close(); } else { alert('Please refresh from the main page.'); }" style="background: #1976d2; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-size: 1rem;">🔄 Refresh</button>
     </div>
 </body>
 
