@@ -2462,33 +2462,29 @@
         <button onclick="copyToClipboard('evaluators')" style="background: #1976d2; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem;">📋 Copy All Evaluators</button>
         <button onclick="copyToClipboard('ttSpeakers')" style="background: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem;">📋 Copy All TT Speakers</button>
     </div>
-    <script>
-        const speakerNames = [${meeting.speakers.filter(s => s && s.name).map(s => `'${s.name.replace(/'/g, "\\'")}'`).join(',')}];
-        const evaluatorNames = [${meeting.evaluators.filter(e => e && e.name).map(e => `'${e.name.replace(/'/g, "\\'")}'`).join(',')}];
-        const ttSpeakerNames = [${attendanceList.filter(a => a.is_table_topics_speaker).map(a => `'${a.name.replace(/'/g, "\\'")}'`).join(',')}];
-
+<script>
+        var presentationData = JSON.parse('PRESENTER_DATA_PLACEHOLDER');
         function copyToClipboard(type) {
-            let names = [];
-            let label = '';
-            if (type === 'speakers') { names = speakerNames; label = 'Speaker'; }
-            else if (type === 'evaluators') { names = evaluatorNames; label = 'Evaluator'; }
-            else if (type === 'ttSpeakers') { names = ttSpeakerNames; label = 'TT Speaker'; }
-
+            var names = [];
+            var label = '';
+            if (type === 'speakers') { names = presentationData.speakers; label = 'Speaker'; }
+            else if (type === 'evaluators') { names = presentationData.evaluators; label = 'Evaluator'; }
+            else if (type === 'ttSpeakers') { names = presentationData.ttSpeakers; label = 'TT Speaker'; }
             if (names.length === 0) {
                 alert('No ' + label.toLowerCase() + ' names to copy.');
                 return;
             }
-            const text = names.join('\\n');
-            navigator.clipboard.writeText(text).then(() => {
-                alert(label + ' names copied!\\n\\n' + names.join('\\n'));
-            }).catch(() => {
-                const ta = document.createElement('textarea');
+            var text = names.join(String.fromCharCode(10));
+            navigator.clipboard.writeText(text).then(function() {
+                alert(label + ' names copied!' + String.fromCharCode(10) + String.fromCharCode(10) + text);
+            }).catch(function() {
+                var ta = document.createElement('textarea');
                 ta.value = text;
                 document.body.appendChild(ta);
                 ta.select();
                 document.execCommand('copy');
                 document.body.removeChild(ta);
-                alert(label + ' names copied!\\n\\n' + names.join('\\n'));
+                alert(label + ' names copied!' + String.fromCharCode(10) + String.fromCharCode(10) + text);
             });
         }
     </script>
@@ -2499,6 +2495,14 @@
             
             // Open in new window
             const presentationWindow = window.open('', '_blank', 'width=1920,height=1080');
+            
+            // Build copy button data
+            const speakerNames = meeting.speakers.filter(s => s && s.name).map(s => s.name);
+            const evaluatorNames = meeting.evaluators.filter(e => e && e.name).map(e => e.name);
+            const ttSpeakerNames = attendanceList.filter(a => a.is_table_topics_speaker).map(a => a.name);
+            const presData = JSON.stringify({ speakers: speakerNames, evaluators: evaluatorNames, ttSpeakers: ttSpeakerNames });
+            presentationHTML = presentationHTML.replace('PRESENTER_DATA_PLACEHOLDER', presData.replace(/'/g, "\\'"));
+
             presentationWindow.document.write(presentationHTML);
             presentationWindow.document.close();
         }
