@@ -2074,6 +2074,7 @@
             if (agendaDisplay) {
                 agendaDisplay.innerHTML = generateAgendaHTML(meeting);
                 loadGuestList(selectedMeetingId);
+                loadTTSpeakersList(selectedMeetingId);
             }
         }
 
@@ -2111,20 +2112,27 @@
                         
                         <div class="agenda-line section-header">
                             <span>🎤 Prepared Speeches</span>
+                        <div style="text-align: right; margin: 0.5rem 0 1rem;">
+                            <button onclick="copySpeakerNames()" style="background: #1976d2; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">📋 Copy All Speakers</button>
                         </div>
-                        ${generateSpeakerLine('Speaker#1', meeting.speakers[0], 0)}
-                        ${generateSpeakerLine('Speaker#2', meeting.speakers[1], 1)}
-                        ${generateSpeakerLine('Speaker#3', meeting.speakers[2], 2)}
-                        ${generateSpeakerLine('Speaker#4', meeting.speakers[3], 3)}
-                        
                         <div class="agenda-line section-header">
-                            <span>🗣️ Table Topics & Evaluations</span>
+                            <span>📝 Evaluators</span>
                         </div>
-                        ${generateAgendaLine('Table Topics Master', meeting.roles['table-topics-master'] || meeting.roles.topics, 'topics')}
                         ${generateEvaluatorLine('Evaluator#1', meeting.evaluators[0], 0)}
                         ${generateEvaluatorLine('Evaluator#2', meeting.evaluators[1], 1)}
                         ${generateEvaluatorLine('Evaluator#3', meeting.evaluators[2], 2)}
                         ${generateEvaluatorLine('Evaluator#4', meeting.evaluators[3], 3)}
+                        <div style="text-align: right; margin: 0.5rem 0 1rem;">
+                            <button onclick="copyEvaluatorNames()" style="background: #1976d2; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">📋 Copy All Evaluators</button>
+                        </div>
+                        <div class="agenda-line section-header">
+                            <span>🗣️ Table Topics</span>
+                        </div>
+                        ${generateAgendaLine('Table Topics Master', meeting.roles['table-topics-master'] || meeting.roles.topics, 'topics')}
+                        <div id="ttSpeakersList"></div>
+                        <div style="text-align: right; margin: 0.5rem 0 1rem;">
+                            <button onclick="copyTTSpeakerNames()" style="background: #ff9800; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">📋 Copy All TT Speakers</button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -2280,6 +2288,75 @@
                 document.body.removeChild(textarea);
                 alert('Guest emails copied to clipboard!');
             });
+        }
+
+        function copySpeakerNames() {
+            if (!selectedMeetingId || !meetings[selectedMeetingId]) return;
+            const meeting = meetings[selectedMeetingId];
+            const names = meeting.speakers.filter(s => s && s.name).map(s => s.name);
+            copyNamesToClipboard(names, 'Speaker');
+        }
+
+        function copyEvaluatorNames() {
+            if (!selectedMeetingId || !meetings[selectedMeetingId]) return;
+            const meeting = meetings[selectedMeetingId];
+            const names = meeting.evaluators.filter(e => e && e.name).map(e => e.name);
+            copyNamesToClipboard(names, 'Evaluator');
+        }
+
+        async function copyTTSpeakerNames() {
+            try {
+                const headers = {};
+                if (apiClient.token) headers['Authorization'] = `Bearer ${apiClient.token}`;
+                const res = await fetch(`/api/attendance/index?meeting_id=${selectedMeetingId}`, { headers });
+                const data = await res.json();
+                const names = (data.attendance || []).filter(a => a.is_table_topics_speaker).map(a => a.name);
+                copyNamesToClipboard(names, 'TT Speaker');
+            } catch (e) {
+                alert('Failed to load TT speakers.');
+            }
+        }
+
+        function copyNamesToClipboard(names, label) {
+            if (names.length === 0) {
+                alert('No ' + label.toLowerCase() + ' names to copy.');
+                return;
+            }
+            const text = names.join('\n');
+            navigator.clipboard.writeText(text).then(() => {
+                alert(label + ' names copied!\n\n' + text);
+            }).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                alert(label + ' names copied!\n\n' + text);
+            });
+        }
+
+        async function loadTTSpeakersList(meetingId) {
+            const listEl = document.getElementById('ttSpeakersList');
+            if (!listEl) return;
+            try {
+                const headers = {};
+                if (apiClient.token) headers['Authorization'] = `Bearer ${apiClient.token}`;
+                const res = await fetch(`/api/attendance/index?meeting_id=${meetingId}`, { headers });
+                const data = await res.json();
+                const ttSpeakers = (data.attendance || []).filter(a => a.is_table_topics_speaker);
+                if (ttSpeakers.length === 0) {
+                    listEl.innerHTML = '<div class="agenda-line"><span class="agenda-role" style="color: #999;">No TT speakers recorded yet.</span></div>';
+                    return;
+                }
+                listEl.innerHTML = ttSpeakers.map(a => `
+                    <div class="agenda-line">
+                        <span class="agenda-role"><span class="assignment-name">${a.name}</span> <span style="font-size: 0.8rem; color: #666;">(${a.type})</span></span>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error('Load TT speakers error:', e);
+            }
         }
 
         async function openPresentationMode() {
@@ -2457,11 +2534,6 @@
             </div>
         </div>
     </div>
-    <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 2rem; padding: 1rem;">
-        <button onclick="copyToClipboard('speakers')" style="background: #1976d2; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem;">📋 Copy All Speakers</button>
-        <button onclick="copyToClipboard('evaluators')" style="background: #1976d2; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem;">📋 Copy All Evaluators</button>
-        <button onclick="copyToClipboard('ttSpeakers')" style="background: #ff9800; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem;">📋 Copy All TT Speakers</button>
-    </div>
 </body>
 
 </html>
@@ -2470,40 +2542,8 @@
             // Open in new window
             const presentationWindow = window.open('', '_blank', 'width=1920,height=1080');
             
-            // Build copy button data
-            const speakerNames = meeting.speakers.filter(s => s && s.name).map(s => s.name);
-            const evaluatorNames = meeting.evaluators.filter(e => e && e.name).map(e => e.name);
-            const ttSpeakerNames = attendanceList.filter(a => a.is_table_topics_speaker).map(a => a.name);
-            const presData = JSON.stringify({ speakers: speakerNames, evaluators: evaluatorNames, ttSpeakers: ttSpeakerNames });
             presentationWindow.document.write(presentationHTML);
             presentationWindow.document.close();
-
-            // Inject copy function into presentation window
-            const presWin = presentationWindow;
-            presWin.presentationData = { speakers: speakerNames, evaluators: evaluatorNames, ttSpeakers: ttSpeakerNames };
-            presWin.copyToClipboard = function(type) {
-                var names = [];
-                var label = '';
-                if (type === 'speakers') { names = presWin.presentationData.speakers; label = 'Speaker'; }
-                else if (type === 'evaluators') { names = presWin.presentationData.evaluators; label = 'Evaluator'; }
-                else if (type === 'ttSpeakers') { names = presWin.presentationData.ttSpeakers; label = 'TT Speaker'; }
-                if (names.length === 0) {
-                    alert('No ' + label.toLowerCase() + ' names to copy.');
-                    return;
-                }
-                var text = names.join(String.fromCharCode(10));
-                navigator.clipboard.writeText(text).then(function() {
-                    alert(label + ' names copied!' + String.fromCharCode(10) + String.fromCharCode(10) + text);
-                }).catch(function() {
-                    var ta = presWin.document.createElement('textarea');
-                    ta.value = text;
-                    presWin.document.body.appendChild(ta);
-                    ta.select();
-                    presWin.document.execCommand('copy');
-                    presWin.document.body.removeChild(ta);
-                    alert(label + ' names copied!' + String.fromCharCode(10) + String.fromCharCode(10) + text);
-                });
-            };
         }
         
         function generatePresentationSpeeches(meeting) {
