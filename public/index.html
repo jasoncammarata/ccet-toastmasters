@@ -1418,6 +1418,20 @@
                     <div class="loading"></div>
                     <p>Loading meeting agenda...</p>
                 </div>
+
+            <!-- TT Speaker Tracker Panel -->
+            <div id="ttTrackerPanel" style="display: none; margin-top: 1.5rem;">
+                <div class="role-card" style="border-left-color: #ff9800;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <h3 style="color: #e65100; margin: 0;">🎤 Table Topics Speaker Tracker</h3>
+                        <button onclick="closeTTTracker()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999;">✕</button>
+                    </div>
+                    <p style="color: #666; margin-bottom: 1rem;">Check the box next to each person who participated in Table Topics.</p>
+                    <div id="ttTrackerList">
+                        <p style="color: #999;">Loading attendance...</p>
+                    </div>
+                </div>
+            </div>
             </div>
 
             <div id="visitorNote" class="role-card" style="display: none; margin-top: 2rem; background: #e3f2fd; border-left-color: #1976d2;">
@@ -2114,6 +2128,89 @@
                 </div>
             `;
         }
+        
+        // TT Speaker Tracker functions
+        async function openTTTracker() {
+            if (!selectedMeetingId) {
+                alert('Please select a meeting first.');
+                return;
+            }
+            const panel = document.getElementById('ttTrackerPanel');
+            panel.style.display = 'block';
+            panel.scrollIntoView({ behavior: 'smooth' });
+            await loadTTTracker();
+        }
+
+        function closeTTTracker() {
+            document.getElementById('ttTrackerPanel').style.display = 'none';
+        }
+
+        async function loadTTTracker() {
+            const listEl = document.getElementById('ttTrackerList');
+            listEl.innerHTML = '<p style="color: #999;">Loading...</p>';
+
+            try {
+                const headers = {};
+                if (apiClient.token) headers['Authorization'] = `Bearer ${apiClient.token}`;
+
+                const res = await fetch(`/api/attendance/index?meeting_id=${selectedMeetingId}`, { headers });
+                const data = await res.json();
+                const attendance = data.attendance || [];
+                const isLocked = data.isLocked;
+
+                if (attendance.length === 0) {
+                    listEl.innerHTML = '<p style="color: #999;">No attendees checked in yet.</p>';
+                    return;
+                }
+
+                const isAdmin = currentUser && currentUser.isAdmin;
+
+                listEl.innerHTML = attendance.map(a => `
+                    <div style="display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee;">
+                        <input type="checkbox" 
+                            style="width: 20px; height: 20px; margin-right: 10px; cursor: pointer;"
+                            ${a.is_table_topics_speaker ? 'checked' : ''}
+                            ${isLocked && !isAdmin ? 'disabled' : ''}
+                            onchange="toggleTTSpeaker(${a.member_id || 'null'}, ${a.guest_id || 'null'}, this)"
+                        >
+                        <span style="font-size: 1.05rem;">${a.name}</span>
+                        <span style="margin-left: 0.5rem; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; background: ${a.type === 'member' ? '#e3f2fd' : '#e8f5e9'}; color: ${a.type === 'member' ? '#1976d2' : '#2e7d32'};">${a.type}</span>
+                    </div>
+                `).join('');
+
+                if (isLocked && !isAdmin) {
+                    listEl.innerHTML = '<div style="padding: 0.75rem; background: #fff3cd; border-radius: 8px; color: #856404; margin-bottom: 1rem;">🔒 Table Topics tracking is locked for this meeting.</div>' + listEl.innerHTML;
+                }
+            } catch (e) {
+                console.error('TT Tracker load error:', e);
+                listEl.innerHTML = '<p style="color: red;">Failed to load attendance.</p>';
+            }
+        }
+
+        async function toggleTTSpeaker(memberId, guestId, checkbox) {
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (apiClient.token) headers['Authorization'] = `Bearer ${apiClient.token}`;
+
+                const body = { meeting_id: parseInt(selectedMeetingId) };
+                if (memberId) body.member_id = memberId;
+                if (guestId) body.guest_id = guestId;
+
+                const res = await fetch('/api/attendance/table-topics', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    checkbox.checked = !checkbox.checked;
+                    alert(data.error || 'Failed to update');
+                }
+            } catch (e) {
+                checkbox.checked = !checkbox.checked;
+                alert('Failed to update: ' + e.message);
+            }
+        }
 
         async function openPresentationMode() {
             if (!selectedMeetingId || !meetings[selectedMeetingId]) {
@@ -2351,6 +2448,14 @@
             // Add word of the day for ah-counter (visible to everyone)
             if (roleId === 'ah-counter-grammarian' && wordOfTheDay) {
                 roleDisplay += `<span class="word-of-day" style="margin-left: 1rem;">Word of the Day: <strong><a href="https://www.google.com/search?q=define+${encodeURIComponent(wordOfTheDay)}" target="_blank" style="color: #1976d2; text-decoration: none;">${wordOfTheDay}</a></strong></span>`;
+            }
+            
+            // Add TT Speaker Tracker button for Timer (visible to assigned Timer and admins)
+            if (roleId === 'timer' && currentUser) {
+                const isTimer = assignmentName && assignmentName === currentUser.name;
+                if (isTimer || currentUser.isAdmin) {
+                    roleDisplay += `<button class="edit-button" style="margin-left: 1rem; background: #ff9800; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer;" onclick="openTTTracker()">🎤 TT Speaker Tracker</button>`;
+                }
             }
             
             let actionButton = '';
