@@ -2450,14 +2450,6 @@
                 roleDisplay += `<span class="word-of-day" style="margin-left: 1rem;">Word of the Day: <strong><a href="https://www.google.com/search?q=define+${encodeURIComponent(wordOfTheDay)}" target="_blank" style="color: #1976d2; text-decoration: none;">${wordOfTheDay}</a></strong></span>`;
             }
             
-            // Add TT Speaker Tracker button for Timer (visible to assigned Timer and admins)
-            if (roleId === 'timer' && currentUser) {
-                const isTimer = assignmentName && assignmentName === currentUser.name;
-                if (isTimer || currentUser.isAdmin) {
-                    roleDisplay += `<button class="edit-button" style="margin-left: 1rem; background: #ff9800; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer;" onclick="openTTTracker()">🎤 TT Speaker Tracker</button>`;
-                }
-            }
-            
             let actionButton = '';
             if (currentUser) {
             if (currentUser.isAdmin) {
@@ -2486,6 +2478,14 @@
                 }
             } else if (!assignmentName) {
                 actionButton = `<button class="signup-button" disabled title="Member login required">Sign Up</button>`;
+            }
+
+            // Add TT Speaker Tracker button for Timer (visible to assigned Timer and admins)
+            if (roleId === 'timer' && currentUser) {
+                const isTimer = assignmentName && assignmentName === currentUser.name;
+                if (isTimer || currentUser.isAdmin) {
+                    actionButton += `<button class="edit-button" style="background: #ff9800; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer;" onclick="openTTTracker()">🎤 TT Tracker</button>`;
+                }
             }
             
             return `
