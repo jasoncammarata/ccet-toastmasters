@@ -220,10 +220,18 @@
                 </div>
             </div>
             <div id="adminCheckinError" class="error hidden"></div>
-            <button class="btn btn-checkin" onclick="adminCheckinPerson()">✅ Check In</button>
-            <button class="btn btn-secondary" onclick="goBack()">← Back</button>
-        </div> 
-
+            <button class="btn btn-checkin" onclick="adminCheckinPerson()">➕ Add Attendee</button>
+            <hr style="margin: 1.5rem 0; border: none; border-top: 2px solid #eee;">
+            <div class="form-group">
+                <label>Remove Attendee</label>
+                <select id="adminRemoveSelect" style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;">
+                    <option value="">-- Select person to remove --</option>
+                </select>
+            </div>
+            <div id="adminRemoveError" class="error hidden"></div>
+            <button class="btn btn-secondary" onclick="adminRemovePerson()" style="background: #dc3545; color: white;">➖ Remove Attendee</button>
+            <button class="btn btn-secondary" onclick="goBack()" style="margin-top: 0.5rem;">← Back</button>
+        </div>
         <!-- Success screen -->
         <div id="stepSuccess" class="hidden">
             <div class="success-message">
@@ -397,6 +405,8 @@
                 active.forEach(m => {
                     select.innerHTML += `<option value="${m.email}" data-name="${m.name}">${m.name}</option>`;
                 });
+                // Also load attendance for remove dropdown
+                await loadRemoveList();
             } catch (e) {
                 console.error('Load members error:', e);
             }
@@ -464,6 +474,7 @@
                     showSuccess(name);
                 }
                 loadAttendance();
+                await loadRemoveList();
                 // Clear forms
                 document.getElementById('adminMemberSelect').selectedIndex = 0;
                 document.getElementById('adminCheckinName').value = '';
@@ -471,6 +482,60 @@
                 document.getElementById('adminCheckinPhone').value = '';
             } catch (e) {
                 errorEl.textContent = e.message || 'Check-in failed';
+                errorEl.classList.remove('hidden');
+            }
+        }
+
+        async function loadRemoveList() {
+            try {
+                const headers = {};
+                if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+                const res = await fetch(`${API_BASE}/attendance/index?meeting_id=${meetingId}`, { headers });
+                const data = await res.json();
+                const select = document.getElementById('adminRemoveSelect');
+                select.innerHTML = '<option value="">-- Select person to remove --</option>';
+                (data.attendance || []).forEach(a => {
+                    const val = a.member_id ? `member_${a.member_id}` : `guest_${a.guest_id}`;
+                    select.innerHTML += `<option value="${val}">${a.name} (${a.type})</option>`;
+                });
+            } catch (e) {
+                console.error('Load remove list error:', e);
+            }
+        }
+
+        async function adminRemovePerson() {
+            const select = document.getElementById('adminRemoveSelect');
+            const val = select.value;
+            const errorEl = document.getElementById('adminRemoveError');
+            errorEl.classList.add('hidden');
+
+            if (!val) {
+                errorEl.textContent = 'Please select a person to remove';
+                errorEl.classList.remove('hidden');
+                return;
+            }
+
+            const [type, id] = val.split('_');
+            try {
+                const res = await fetch(`${API_BASE}/attendance/index`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        meeting_id: parseInt(meetingId),
+                        member_id: type === 'member' ? parseInt(id) : null,
+                        guest_id: type === 'guest' ? parseInt(id) : null
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                alert(`${select.options[select.selectedIndex].text} removed.`);
+                await loadRemoveList();
+                loadAttendance();
+            } catch (e) {
+                errorEl.textContent = e.message || 'Remove failed';
                 errorEl.classList.remove('hidden');
             }
         }

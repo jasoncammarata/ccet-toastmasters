@@ -160,6 +160,35 @@ module.exports = async (req, res) => {
     }
   }
 
+  // DELETE - remove attendance (admin only)
+  else if (req.method === 'DELETE') {
+    const { meeting_id, member_id, guest_id } = req.body;
+    if (!meeting_id) {
+      return res.status(400).json({ error: 'meeting_id is required' });
+    }
+    try {
+      const token = req.headers.authorization?.replace('Bearer ', '');
+      const user = token ? verifyToken(token) : null;
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({ error: 'Admin access required' });
+      }
+      if (member_id) {
+        // Also remove from table_topics_speakers
+        db.prepare('DELETE FROM table_topics_speakers WHERE meeting_id = ? AND member_id = ?').run(meeting_id, member_id);
+        db.prepare('DELETE FROM attendance WHERE meeting_id = ? AND member_id = ?').run(meeting_id, member_id);
+      } else if (guest_id) {
+        db.prepare('DELETE FROM table_topics_speakers WHERE meeting_id = ? AND guest_id = ?').run(meeting_id, guest_id);
+        db.prepare('DELETE FROM attendance WHERE meeting_id = ? AND guest_id = ?').run(meeting_id, guest_id);
+      } else {
+        return res.status(400).json({ error: 'member_id or guest_id is required' });
+      }
+      return res.json({ success: true });
+    } catch (error) {
+      console.error('Delete attendance error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+
   else {
     res.status(405).json({ error: 'Method not allowed' });
   }
