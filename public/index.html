@@ -2643,17 +2643,30 @@
         <button onclick="if(window.opener && !window.opener.closed) { window.opener.openPresentationMode(); window.close(); } else { alert('Please refresh from the main page.'); }" style="background: #1976d2; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-size: 1rem;">🔄 Refresh</button>
     </div>
 </body>
-
 </html>
             `;
-            
-            // Open in new window
-            const presentationWindow = window.open('', '_blank', 'width=1920,height=1080');
-            
+            // Open in new window or reuse existing
+            var presentationWindow = window.presentationWindow && !window.presentationWindow.closed ? window.presentationWindow : window.open("", "_blank", "width=1920,height=1080");
+            window.presentationWindow = presentationWindow;
             presentationWindow.document.write(presentationHTML);
             presentationWindow.document.close();
+            // Auto-refresh every 10 seconds
+            if (window.presentationRefreshTimer) clearInterval(window.presentationRefreshTimer);
+            window.presentationRefreshTimer = setInterval(() => {
+                if (window.presentationWindow && !window.presentationWindow.closed) {
+                    refreshPresentationContent();
+                } else {
+                    clearInterval(window.presentationRefreshTimer);
+                }
+            }, 10000);
         }
         
+        async function refreshPresentationContent() {
+            if (!selectedMeetingId || !meetings[selectedMeetingId]) return;
+            if (!window.presentationWindow || window.presentationWindow.closed) return;
+            await loadMeetingDetails(selectedMeetingId);
+            openPresentationMode();
+        }
         function generatePresentationSpeeches(meeting) {
             let html = '';
             for (let i = 0; i < 4; i++) {
