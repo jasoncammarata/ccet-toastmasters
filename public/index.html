@@ -2082,7 +2082,8 @@
             const agendaDisplay = document.getElementById('agendaDisplay');
             if (agendaDisplay) {
                 agendaDisplay.innerHTML = generateAgendaHTML(meeting);
-                loadGuestList(selectedMeetingId).then(() => loadTTSpeakersList(selectedMeetingId));
+                await loadGuestList(selectedMeetingId);
+                await loadTTSpeakersList(selectedMeetingId);
                 checkVotingStatus();
             }
         }
@@ -2397,6 +2398,9 @@
                     document.getElementById("openVotingBtn").style.display = "inline-block";
                     document.getElementById("closeVotingBtn").style.display = "none";
                     document.getElementById("votingStatusText").textContent = "Voting is closed - results displayed";
+                    const resultsResp = await fetch("/api/voting/index?meeting_id=" + selectedMeetingId);
+                    const resultsData = await resultsResp.json();
+                    displayMedals(resultsData.results);
                 } else {
                     alert(data.error || "Failed to close voting");
                 }
@@ -2406,6 +2410,42 @@
             }
         }
 
+        function displayMedals(results) {
+            if (!results) return;
+            document.querySelectorAll(".vote-medal").forEach(el => el.remove());
+            const medalIcons = { gold: "\uD83E\uDD47", silver: "\uD83E\uDD48", bronze: "\uD83E\uDD49" };
+            // Map section headers to voting categories
+            const sectionMap = {
+                "Prepared Speeches": "speaker",
+                "Evaluators": "evaluator",
+                "Table Topics": "table_topics"
+            };
+            // Find all section headers and process each section
+            document.querySelectorAll(".section-header").forEach(header => {
+                const headerText = header.textContent.trim();
+                let category = null;
+                for (const [label, cat] of Object.entries(sectionMap)) {
+                    if (headerText.includes(label)) { category = cat; break; }
+                }
+                if (!category || !results[category]) return;
+                // Walk through sibling elements until next section header
+                let el = header.nextElementSibling;
+                while (el && !el.classList.contains("section-header")) {
+                    el.querySelectorAll(".assignment-name").forEach(span => {
+                        const name = span.textContent.trim();
+                        const win = results[category].find(w => w.name === name);
+                        if (win) {
+                            const medalSpan = document.createElement("span");
+                            medalSpan.className = "vote-medal";
+                            medalSpan.style.marginLeft = "0.3rem";
+                            medalSpan.textContent = medalIcons[win.medal];
+                            span.parentNode.insertBefore(medalSpan, span.nextSibling);
+                        }
+                    });
+                    el = el.nextElementSibling;
+                }
+            });
+        }
         async function checkVotingStatus() {
             if (!selectedMeetingId) return;
             try {
@@ -2421,6 +2461,7 @@
                     document.getElementById("openVotingBtn").style.display = "none";
                     document.getElementById("closeVotingBtn").style.display = "none";
                     document.getElementById("votingStatusText").textContent = "Voting is locked for this meeting";
+                    if (data.results) displayMedals(data.results);
                 } else if (data.status === "open") {
                     document.getElementById("openVotingBtn").style.display = "none";
                     document.getElementById("closeVotingBtn").style.display = "inline-block";
@@ -2433,6 +2474,7 @@
                     document.getElementById("openVotingBtn").style.display = "inline-block";
                     document.getElementById("closeVotingBtn").style.display = "none";
                     document.getElementById("votingStatusText").textContent = "Voting closed - " + data.voteCount + " votes recorded";
+                    if (data.results) displayMedals(data.results);
                 } else {
                     document.getElementById("openVotingBtn").style.display = "inline-block";
                     document.getElementById("closeVotingBtn").style.display = "none";
