@@ -45,9 +45,18 @@ app.all('/api/speech-log/toggle', convertHandler(require('./api/speech-log/toggl
 app.all('/api/attendance/index', convertHandler(require('./api/attendance/index')));
 app.all('/api/attendance/table-topics', convertHandler(require('./api/attendance/table-topics')));
 app.all('/api/attendance/qrcode', convertHandler(require('./api/attendance/qrcode')));
+app.all('/api/voting/index', convertHandler(require('./api/voting/index')));
 
 app.get('/checkin', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'checkin.html'));
+});
+
+app.get('/vote', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'vote.html'));
+});
+
+app.get('/voting-display', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'voting-display.html'));
 });
 
 // Catch all route - must be last

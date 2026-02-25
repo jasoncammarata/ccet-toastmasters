@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voting - Crystal City Evening Toastmasters</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0d1b2a;
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .display-container {
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 2rem 3rem;
+        }
+        .display-header {
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .display-header h1 {
+            font-size: 2.5rem;
+            color: #64b5f6;
+            margin-bottom: 0.25rem;
+        }
+        .display-header .subtitle {
+            font-size: 1.3rem;
+            color: #90caf9;
+            opacity: 0.8;
+        }
+        .vote-status {
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+        .status-open {
+            background: rgba(76, 175, 80, 0.2);
+            color: #81c784;
+            border: 2px solid #4caf50;
+        }
+        .status-closed {
+            background: rgba(255, 152, 0, 0.2);
+            color: #ffb74d;
+            border: 2px solid #ff9800;
+        }
+        .vote-counter {
+            text-align: center;
+            font-size: 3rem;
+            font-weight: bold;
+            color: #e3f2fd;
+            margin-bottom: 1rem;
+        }
+        .vote-counter .count-num {
+            font-size: 4rem;
+            color: #64b5f6;
+        }
+        .qr-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+        }
+        .qr-section img {
+            width: 250px;
+            height: 250px;
+            border-radius: 12px;
+            background: white;
+            padding: 10px;
+        }
+        .qr-label {
+            font-size: 1.4rem;
+            color: #90caf9;
+            margin-top: 1rem;
+            text-align: center;
+        }
+        .qr-url {
+            font-size: 1.2rem;
+            color: #bbdefb;
+            margin-top: 0.5rem;
+            font-family: monospace;
+        }
+        /* Results display */
+        .results-container {
+            display: none;
+            flex: 1;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 2rem;
+            height: 100%;
+        }
+        .result-category {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .result-category h2 {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #64b5f6;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid rgba(100,181,246,0.3);
+        }
+        .result-entry {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: 8px;
+            font-size: 1.3rem;
+        }
+        .result-entry .medal-icon {
+            font-size: 2rem;
+            margin-right: 1rem;
+            min-width: 2.5rem;
+            text-align: center;
+        }
+        .result-entry .winner-name {
+            font-weight: 600;
+        }
+        .result-entry .points {
+            margin-left: auto;
+            font-size: 1rem;
+            opacity: 0.7;
+        }
+        .gold-entry { background: rgba(255, 215, 0, 0.15); border: 1px solid rgba(255, 215, 0, 0.3); }
+        .silver-entry { background: rgba(192, 192, 192, 0.15); border: 1px solid rgba(192, 192, 192, 0.3); }
+        .bronze-entry { background: rgba(205, 127, 50, 0.15); border: 1px solid rgba(205, 127, 50, 0.3); }
+        .no-results {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 1rem;
+        }
+        .waiting-message {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #546e7a;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="display-container">
+        <div class="display-header">
+            <h1>Crystal City Evening Toastmasters</h1>
+            <p class="subtitle">Meeting Awards</p>
+        </div>
+
+        <div id="status-bar" class="vote-status status-open" style="display:none;"></div>
+
+        <!-- Voting Open View -->
+        <div id="open-view">
+            <div class="vote-counter">
+                <span class="count-num" id="count-voted">0</span> of
+                <span class="count-num" id="count-total">0</span>
+                <div style="font-size:1.3rem; margin-top:0.25rem;">attendees have voted</div>
+            </div>
+            <div class="qr-section">
+                <img id="qr-image" src="" alt="Scan to vote" style="display:none;" />
+                <div class="qr-label">Scan the QR code or visit:</div>
+                <div class="qr-url" id="vote-url"></div>
+            </div>
+        </div>
+
+        <!-- Results View -->
+        <div id="results-view" class="results-container">
+            <div class="results-grid">
+                <div class="result-category">
+                    <h2>Best Speaker</h2>
+                    <div id="results-speaker"></div>
+                </div>
+                <div class="result-category">
+                    <h2>Best Evaluator</h2>
+                    <div id="results-evaluator"></div>
+                </div>
+                <div class="result-category">
+                    <h2>Best Table Topics</h2>
+                    <div id="results-table-topics"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Waiting View -->
+        <div id="waiting-view">
+            <div class="waiting-message">Voting has not been opened for this meeting yet.</div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const meetingId = urlParams.get('meeting_id');
+        let lastStatus = null;
+        let qrGenerated = false;
+
+        function generateQRCode(url) {
+            // Use a QR code API
+            const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=' + encodeURIComponent(url);
+            const img = document.getElementById('qr-image');
+            img.src = qrUrl;
+            img.style.display = 'block';
+        }
+
+        function renderResults(results) {
+            const categories = [
+                { key: 'speaker', elementId: 'results-speaker' },
+                { key: 'evaluator', elementId: 'results-evaluator' },
+                { key: 'table_topics', elementId: 'results-table-topics' }
+            ];
+
+            const medalIcons = { gold: '\uD83E\uDD47', silver: '\uD83E\uDD48', bronze: '\uD83E\uDD49' };
+            const medalClasses = { gold: 'gold-entry', silver: 'silver-entry', bronze: 'bronze-entry' };
+
+            for (const cat of categories) {
+                const container = document.getElementById(cat.elementId);
+                const entries = results[cat.key];
+
+                if (!entries || entries.length === 0) {
+                    container.innerHTML = '<div class="no-results">No votes in this category</div>';
+                    continue;
+                }
+
+                let html = '';
+                for (const entry of entries) {
+                    html += '<div class="result-entry ' + medalClasses[entry.medal] + '">';
+                    html += '<span class="medal-icon">' + medalIcons[entry.medal] + '</span>';
+                    html += '<span class="winner-name">' + entry.name + '</span>';
+                    html += '<span class="points">' + entry.total_points + ' pts</span>';
+                    html += '</div>';
+                }
+                container.innerHTML = html;
+            }
+        }
+
+        async function poll() {
+            if (!meetingId) return;
+
+            try {
+                const resp = await fetch('/api/voting/index?meeting_id=' + meetingId);
+                const data = await resp.json();
+
+                const statusBar = document.getElementById('status-bar');
+                const openView = document.getElementById('open-view');
+                const resultsView = document.getElementById('results-view');
+                const waitingView = document.getElementById('waiting-view');
+
+                if (data.status === 'open') {
+                    waitingView.style.display = 'none';
+                    resultsView.style.display = 'none';
+                    openView.style.display = 'block';
+                    statusBar.style.display = 'block';
+                    statusBar.className = 'vote-status status-open';
+                    statusBar.textContent = 'Voting is Open';
+
+                    document.getElementById('count-voted').textContent = data.voteCount;
+                    document.getElementById('count-total').textContent = data.attendanceCount;
+
+                    if (!qrGenerated) {
+                        const voteUrl = window.location.origin + '/vote?meeting_id=' + meetingId;
+                        document.getElementById('vote-url').textContent = voteUrl;
+                        generateQRCode(voteUrl);
+                        qrGenerated = true;
+                    }
+                } else if (data.status === 'closed' && data.results) {
+                    waitingView.style.display = 'none';
+                    openView.style.display = 'none';
+                    resultsView.style.display = 'block';
+                    statusBar.style.display = 'block';
+                    statusBar.className = 'vote-status status-closed';
+                    statusBar.textContent = 'Final Results';
+
+                    renderResults(data.results);
+                } else {
+                    waitingView.style.display = 'block';
+                    openView.style.display = 'none';
+                    resultsView.style.display = 'none';
+                    statusBar.style.display = 'none';
+                    qrGenerated = false;
+                }
+
+                lastStatus = data.status;
+            } catch (err) {
+                console.error('Poll error:', err);
+            }
+        }
+
+        // Poll every second
+        poll();
+        setInterval(poll, 1000);
+    </script>
+</body>
+</html>

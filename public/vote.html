@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vote - Crystal City Evening Toastmasters</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+            padding: 1rem;
+        }
+        .container { max-width: 600px; margin: 0 auto; }
+        .header {
+            text-align: center;
+            padding: 1.5rem;
+            background: #1976d2;
+            color: white;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        .header h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+        .header p { font-size: 1rem; opacity: 0.9; }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .card h2 { margin-bottom: 1rem; color: #1976d2; font-size: 1.3rem; }
+        .category-label {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #1976d2;
+        }
+        .rank-section { margin-bottom: 1.25rem; }
+        .rank-label {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .rank-label .medal { font-size: 1.2rem; }
+        .rank-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+            appearance: auto;
+        }
+        .rank-select:focus { border-color: #1976d2; outline: none; }
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-vote { background: #ff9800; color: white; margin-top: 1rem; }
+        .btn-vote:hover { background: #f57c00; }
+        .btn-vote:disabled { background: #ccc; cursor: not-allowed; }
+        .success-message {
+            text-align: center;
+            padding: 2rem;
+            background: #e8f5e9;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .success-message h2 { color: #2e7d32; font-size: 1.5rem; }
+        .success-message p { font-size: 1.1rem; margin-top: 0.5rem; }
+        .error { color: #d32f2f; font-size: 0.9rem; margin-top: 0.5rem; text-align: center; }
+        .closed-message {
+            text-align: center;
+            padding: 2rem;
+            background: #fff3e0;
+            border-radius: 8px;
+        }
+        .closed-message h2 { color: #e65100; }
+        .closed-message p { margin-top: 0.5rem; }
+        .no-nominees {
+            color: #999;
+            font-style: italic;
+            padding: 0.5rem 0;
+        }
+        .vote-counter {
+            text-align: center;
+            padding: 0.75rem;
+            background: #e3f2fd;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            color: #1565c0;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Crystal City Evening Toastmasters</h1>
+            <p>Meeting Awards Voting</p>
+        </div>
+
+        <div id="loading" class="card" style="text-align:center;">
+            <p>Loading voting information...</p>
+        </div>
+
+        <div id="closed-view" style="display:none;">
+            <div class="closed-message">
+                <h2>Voting is not open</h2>
+                <p>Voting has not been opened for this meeting yet. Please wait for the Toastmaster to open voting.</p>
+            </div>
+        </div>
+
+        <div id="already-voted" style="display:none;">
+            <div class="success-message">
+                <h2>Thank You!</h2>
+                <p>Your votes have been submitted successfully.</p>
+                <br>
+                <button onclick="allowAnotherVoter()" style="background: #1976d2; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 1rem; cursor: pointer; margin-top: 1rem;">Allow another person to vote from this device</button>
+            </div>
+        </div>
+
+        <div id="vote-form" style="display:none;">
+            <div class="vote-counter" id="vote-counter"></div>
+
+            <form id="ballot" onsubmit="return false;">
+                <!-- Best Speaker -->
+                <div class="card">
+                    <div class="category-label">Best Speaker</div>
+                    <div id="speaker-section"></div>
+                </div>
+
+                <!-- Best Evaluator -->
+                <div class="card">
+                    <div class="category-label">Best Evaluator</div>
+                    <div id="evaluator-section"></div>
+                </div>
+
+                <!-- Best Table Topics Speaker -->
+                <div class="card">
+                    <div class="category-label">Best Table Topics Speaker</div>
+                    <div id="table-topics-section"></div>
+                </div>
+
+                <div id="error-message" class="error" style="display:none;"></div>
+                <button type="button" class="btn btn-vote" id="submit-btn" onclick="submitVotes()">Submit My Votes</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let meetingId = null;
+        let voterToken = null;
+        let nominees = {};
+
+        // Get meeting_id from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        meetingId = urlParams.get('meeting_id');
+
+        // Get or create voter token (stored in cookie)
+        function getVoterToken() {
+            const cookieName = 'voter_token_' + meetingId;
+            const existing = document.cookie.split(';').find(c => c.trim().startsWith(cookieName + '='));
+            if (existing) {
+                return existing.split('=')[1];
+            }
+            const token = 'v_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+            // Cookie expires at end of day
+            const midnight = new Date();
+            midnight.setHours(23, 59, 59, 999);
+            document.cookie = cookieName + '=' + token + '; expires=' + midnight.toUTCString() + '; path=/';
+            return token;
+        }
+
+        // Check if already voted (cookie-based)
+        function hasAlreadyVoted() {
+            const cookieName = 'voted_' + meetingId;
+            return document.cookie.split(';').some(c => c.trim().startsWith(cookieName + '='));
+        }
+
+        function markAsVoted() {
+            const cookieName = 'voted_' + meetingId;
+            const midnight = new Date();
+            midnight.setHours(23, 59, 59, 999);
+            document.cookie = cookieName + '=true; expires=' + midnight.toUTCString() + '; path=/';
+        }
+
+        function allowAnotherVoter() {
+            const cookieName1 = "voted_" + meetingId;
+            const cookieName2 = "voter_token_" + meetingId;
+            document.cookie = cookieName1 + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+            document.cookie = cookieName2 + "=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+            voterToken = null;
+            window.location.reload();
+        }
+        function buildRankDropdowns(containerId, category, nomineeList) {
+            const container = document.getElementById(containerId);
+            if (!nomineeList || nomineeList.length === 0) {
+                container.innerHTML = '<p class="no-nominees">No nominees for this category</p>';
+                return;
+            }
+
+            const ranks = [
+                { rank: 1, label: '1st Choice', medal: '\uD83E\uDD47' },
+                { rank: 2, label: '2nd Choice', medal: '\uD83E\uDD48' },
+                { rank: 3, label: '3rd Choice', medal: '\uD83E\uDD49' }
+            ];
+
+            // Only show as many rank options as there are nominees (max 3)
+            const maxRanks = Math.min(ranks.length, nomineeList.length);
+
+            let html = '';
+            for (let i = 0; i < maxRanks; i++) {
+                const r = ranks[i];
+                html += '<div class="rank-section">';
+                html += '<div class="rank-label"><span class="medal">' + r.medal + '</span> ' + r.label + '</div>';
+                html += '<select class="rank-select" data-category="' + category + '" data-rank="' + r.rank + '">';
+                html += '<option value="">-- Select --</option>';
+                for (const n of nomineeList) {
+                    const val = n.member_id ? 'm_' + n.member_id : 'g_' + n.guest_id;
+                    html += '<option value="' + val + '">' + n.name + '</option>';
+                }
+                html += '</select>';
+                html += '</div>';
+            }
+            container.innerHTML = html;
+        }
+
+        async function loadVoting() {
+            if (!meetingId) {
+                document.getElementById('loading').innerHTML = '<p class="error">No meeting specified.</p>';
+                return;
+            }
+
+            voterToken = getVoterToken();
+
+            // Check if already voted via cookie
+            if (hasAlreadyVoted()) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('already-voted').style.display = 'block';
+                return;
+            }
+
+            try {
+                const resp = await fetch('/api/voting/index?meeting_id=' + meetingId);
+                const data = await resp.json();
+
+                document.getElementById('loading').style.display = 'none';
+
+                if (data.status !== 'open') {
+                    document.getElementById('closed-view').style.display = 'block';
+                    return;
+                }
+
+                nominees = data.nominees;
+                document.getElementById('vote-counter').textContent =
+                    data.voteCount + ' of ' + data.attendanceCount + ' attendees have voted';
+
+                buildRankDropdowns('speaker-section', 'speaker', nominees.speaker);
+                buildRankDropdowns('evaluator-section', 'evaluator', nominees.evaluator);
+                buildRankDropdowns('table-topics-section', 'table_topics', nominees.table_topics);
+
+                document.getElementById('vote-form').style.display = 'block';
+            } catch (err) {
+                document.getElementById('loading').innerHTML = '<p class="error">Error loading voting data.</p>';
+                console.error(err);
+            }
+        }
+
+        async function submitVotes() {
+            const errorEl = document.getElementById('error-message');
+            errorEl.style.display = 'none';
+
+            const selects = document.querySelectorAll('.rank-select');
+            const rankings = [];
+            const categorySelections = {};
+
+            for (const sel of selects) {
+                const category = sel.dataset.category;
+                const rank = parseInt(sel.dataset.rank);
+                const value = sel.value;
+
+                if (!value) continue;
+
+                // Track selections per category to check for duplicates
+                if (!categorySelections[category]) categorySelections[category] = [];
+                if (categorySelections[category].includes(value)) {
+                    errorEl.textContent = 'You cannot select the same person twice in a category.';
+                    errorEl.style.display = 'block';
+                    return;
+                }
+                categorySelections[category].push(value);
+
+                const isGuest = value.startsWith('g_');
+                rankings.push({
+                    category: category,
+                    nominee_member_id: isGuest ? null : parseInt(value.split('_')[1]),
+                    nominee_guest_id: isGuest ? parseInt(value.split('_')[1]) : null,
+                    rank: rank
+                });
+            }
+
+            if (rankings.length === 0) {
+                errorEl.textContent = 'Please make at least one selection before submitting.';
+                errorEl.style.display = 'block';
+                return;
+            }
+
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            try {
+                const resp = await fetch('/api/voting/index', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'vote',
+                        meeting_id: parseInt(meetingId),
+                        voter_token: voterToken,
+                        rankings: rankings
+                    })
+                });
+
+                const data = await resp.json();
+
+                if (data.error) {
+                    errorEl.textContent = data.error;
+                    errorEl.style.display = 'block';
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit My Votes';
+                    return;
+                }
+
+                markAsVoted();
+                document.getElementById('vote-form').style.display = 'none';
+                document.getElementById('already-voted').style.display = 'block';
+            } catch (err) {
+                errorEl.textContent = 'Error submitting votes. Please try again.';
+                errorEl.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit My Votes';
+                console.error(err);
+            }
+        }
+
+        // Load on page ready
+        loadVoting();
+    </script>
+</body>
+</html>

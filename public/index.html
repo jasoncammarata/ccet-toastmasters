@@ -1083,6 +1083,15 @@
                         ✅ Check In Now
                     </button>
                 </div>
+            <div id="meetingDayVoting" style="display: none; margin-top: 1rem; text-align: center;">
+                <div class="role-card" style="max-width: 600px; margin: 0 auto; background: #fff3e0; border-left-color: #ff9800;">
+                    <h3>🗳️ Voting is Open — Vote Now!</h3>
+                    <p id="votingMeetingDate" style="font-size: 1.1rem; margin-bottom: 1rem;"></p>
+                    <button id="homeVoteButton" onclick="" class="btn-primary" style="width: auto; padding: 12px 24px; background: #ff9800;">
+                        🏆 Vote Now
+                    </button>
+                </div>
+            </div>
             </div>
 
             <div style="margin-top: 2rem; text-align: center;">
@@ -2074,6 +2083,7 @@
             if (agendaDisplay) {
                 agendaDisplay.innerHTML = generateAgendaHTML(meeting);
                 loadGuestList(selectedMeetingId).then(() => loadTTSpeakersList(selectedMeetingId));
+                checkVotingStatus();
             }
         }
 
@@ -2136,6 +2146,14 @@
                         <div id="ttSpeakersList"></div>
                         <div style="text-align: right; margin: 0.5rem 0 1rem;">
                             <button onclick="copyTTSpeakerNames()" style="background: #ff9800; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">📋 Copy All TT Speakers</button>
+                        </div>
+                        <div class="agenda-line section-header">
+                            <span>🏆 Voting</span>
+                        </div>
+                        <div style="text-align: center; margin: 0.75rem 0 1rem;">
+                            <button id="openVotingBtn" onclick="openVoting()" style="background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: bold; margin-right: 0.5rem;">🗳️ Open Voting</button>
+                            <button id="closeVotingBtn" onclick="closeVoting()" style="background: #f44336; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: bold; display: none;">🔒 Close Voting</button>
+                            <div id="votingStatusText" style="margin-top: 0.5rem; font-size: 0.9rem; color: #666;"></div>
                         </div>
                     </div>
                 </div>
@@ -2338,6 +2356,81 @@
                 document.body.removeChild(ta);
                 alert(label + ' names copied!\n\n' + text);
             });
+        }
+        // Voting functions
+        async function openVoting() {
+            if (!selectedMeetingId) {
+                alert("Please select a meeting first.");
+                return;
+            }
+            try {
+                const resp = await fetch("/api/voting/index", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "open", meeting_id: parseInt(selectedMeetingId) })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    document.getElementById("openVotingBtn").style.display = "none";
+                    document.getElementById("closeVotingBtn").style.display = "inline-block";
+                    document.getElementById("votingStatusText").textContent = "Voting is open";
+                    window.open("/voting-display?meeting_id=" + selectedMeetingId, "votingDisplay", "width=1280,height=720");
+                } else {
+                    alert(data.error || "Failed to open voting");
+                }
+            } catch (err) {
+                console.error("Open voting error:", err);
+                alert("Error opening voting");
+            }
+        }
+
+        async function closeVoting() {
+            if (!confirm("Are you sure you would like to close voting?")) return;
+            try {
+                const resp = await fetch("/api/voting/index", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ action: "close", meeting_id: parseInt(selectedMeetingId) })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    document.getElementById("openVotingBtn").style.display = "inline-block";
+                    document.getElementById("closeVotingBtn").style.display = "none";
+                    document.getElementById("votingStatusText").textContent = "Voting is closed - results displayed";
+                } else {
+                    alert(data.error || "Failed to close voting");
+                }
+            } catch (err) {
+                console.error("Close voting error:", err);
+                alert("Error closing voting");
+            }
+        }
+
+        async function checkVotingStatus() {
+            if (!selectedMeetingId) return;
+            try {
+                const resp = await fetch("/api/voting/index?meeting_id=" + selectedMeetingId);
+                const data = await resp.json();
+                if (data.isLocked) {
+                    document.getElementById("openVotingBtn").style.display = "none";
+                    document.getElementById("closeVotingBtn").style.display = "none";
+                    document.getElementById("votingStatusText").textContent = "Voting is locked for this meeting";
+                } else if (data.status === "open") {
+                    document.getElementById("openVotingBtn").style.display = "none";
+                    document.getElementById("closeVotingBtn").style.display = "inline-block";
+                    document.getElementById("votingStatusText").textContent = "Voting is open - " + data.voteCount + " of " + data.attendanceCount + " have voted";
+                } else if (data.status === "closed" && data.voteCount > 0) {
+                    document.getElementById("openVotingBtn").style.display = "inline-block";
+                    document.getElementById("closeVotingBtn").style.display = "none";
+                    document.getElementById("votingStatusText").textContent = "Voting closed - " + data.voteCount + " votes recorded";
+                } else {
+                    document.getElementById("openVotingBtn").style.display = "inline-block";
+                    document.getElementById("closeVotingBtn").style.display = "none";
+                    document.getElementById("votingStatusText").textContent = "";
+                }
+            } catch (err) {
+                console.error("Check voting status error:", err);
+            }
         }
 
         async function loadTTSpeakersList(meetingId) {
@@ -4083,6 +4176,30 @@
                 console.error('Meeting day check-in error:', e);
             }
         }
+        async function checkMeetingDayVoting() {
+            try {
+                const response = await fetch("/api/meetings/index");
+                const meetings = await response.json();
+                const now = new Date();
+                const today = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+                const todayMeeting = meetings.find(m => m.date === today);
+                if (todayMeeting) {
+                    const voteRes = await fetch("/api/voting/index?meeting_id=" + todayMeeting.id);
+                    const voteData = await voteRes.json();
+                    if (voteData.status === "open") {
+                        const votingDiv = document.getElementById("meetingDayVoting");
+                        const dateEl = document.getElementById("votingMeetingDate");
+                        const btnEl = document.getElementById("homeVoteButton");
+                        const meetingDate = new Date(todayMeeting.date + "T00:00:00");
+                        dateEl.textContent = meetingDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+                        btnEl.onclick = () => window.open("/vote?meeting_id=" + todayMeeting.id, "_blank");
+                        votingDiv.style.display = "block";
+                    }
+                }
+            } catch (e) {
+                console.error("Meeting day voting check error:", e);
+            }
+        }
 
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', async () => {
@@ -4101,6 +4218,7 @@
             showSection('home');
             // Check if today is a meeting day
             await checkMeetingDayCheckin();
+            await checkMeetingDayVoting();
         });
         // ===== Speech Log Feature =====
         let allSpeechData = [];
