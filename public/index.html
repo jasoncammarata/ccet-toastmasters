@@ -2411,6 +2411,12 @@
             try {
                 const resp = await fetch("/api/voting/index?meeting_id=" + selectedMeetingId);
                 const data = await resp.json();
+                const now = new Date();
+                const todayStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+                const meeting = meetings[selectedMeetingId];
+                const meetingDate = meeting ? meeting.date : null;
+                const meetingDateStr = meetingDate instanceof Date ? meetingDate.getFullYear() + "-" + String(meetingDate.getMonth() + 1).padStart(2, "0") + "-" + String(meetingDate.getDate()).padStart(2, "0") : meetingDate;
+                const isMeetingDay = todayStr === meetingDateStr;
                 if (data.isLocked) {
                     document.getElementById("openVotingBtn").style.display = "none";
                     document.getElementById("closeVotingBtn").style.display = "none";
@@ -2419,6 +2425,10 @@
                     document.getElementById("openVotingBtn").style.display = "none";
                     document.getElementById("closeVotingBtn").style.display = "inline-block";
                     document.getElementById("votingStatusText").textContent = "Voting is open - " + data.voteCount + " of " + data.attendanceCount + " have voted";
+                } else if (!isMeetingDay) {
+                    document.getElementById("openVotingBtn").style.display = "none";
+                    document.getElementById("closeVotingBtn").style.display = "none";
+                    document.getElementById("votingStatusText").textContent = "Voting can only be opened on the day of the meeting";
                 } else if (data.status === "closed" && data.voteCount > 0) {
                     document.getElementById("openVotingBtn").style.display = "inline-block";
                     document.getElementById("closeVotingBtn").style.display = "none";

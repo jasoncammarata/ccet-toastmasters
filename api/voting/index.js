@@ -131,6 +131,13 @@ module.exports = async (req, res) => {
 
     if (isLocked) {
       return res.status(403).json({ error: 'Voting is locked for this meeting' });
+    // Only allow opening voting on the meeting day
+    if (action === "open") {
+      const todayEST = estNow.getFullYear() + "-" + String(estNow.getMonth() + 1).padStart(2, "0") + "-" + String(estNow.getDate()).padStart(2, "0");
+      if (meeting.date !== todayEST) {
+        return res.status(403).json({ error: "Voting can only be opened on the day of the meeting" });
+      }
+    }
     }
 
     try {
