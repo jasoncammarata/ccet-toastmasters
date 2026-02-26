@@ -2364,6 +2364,14 @@
                 alert("Please select a meeting first.");
                 return;
             }
+            // Check if votes already exist for this meeting
+            try {
+                const checkResp = await fetch("/api/voting/index?meeting_id=" + selectedMeetingId);
+                const checkData = await checkResp.json();
+                if (checkData.voteCount > 0) {
+                    if (!confirm("This DELETES ALL previous voting information for this meeting. Are you sure you want to proceed?")) return;
+                }
+            } catch (e) {}
             try {
                 const resp = await fetch("/api/voting/index", {
                     method: "POST",
