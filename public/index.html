@@ -956,6 +956,7 @@
                     <li><a onclick="showSection('agenda')" id="nav-agenda">Meeting Dates & Sign-ups</a></li>
                     <li><a onclick="showSection('education')" id="nav-education">Log My Speech</a></li>
                     <li><a onclick="showSection('participation')" id="nav-participation">Participation Tracker</a></li>
+                     <li><a onclick="showSection('my-participation')" id="nav-my-participation">Member's Dashboard</a></li>
                     <li><a onclick="showSection('about')" id="nav-about">About Us</a></li>
                     <li><a onclick="showSection('contact')" id="nav-contact">Contact</a></li>
                 </ul>
@@ -1565,9 +1566,9 @@
             <div style="margin: 1rem 0; padding: 1rem; background: #f5f5f5; border-radius: 8px;">
                 <label style="margin-right: 10px;">Filter by Date Range:</label>
                 <label style="margin-right: 5px;">From:</label>
-                <input type="date" id="participationStartDate" value="2025-10-01" style="margin-right: 15px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                <input type="date" id="participationStartDate" value="2025-10-01" style="margin-right: 15px; padding: 8px 12px; font-size: 1rem; border: 1px solid #ddd; border-radius: 4px;">
                 <label style="margin-right: 5px;">To:</label>
-                <input type="date" id="participationEndDate" style="margin-right: 15px; padding: 5px; border: 1px solid #ddd; border-radius: 4px;">
+                <input type="date" id="participationEndDate" style="margin-right: 15px; padding: 8px 12px; font-size: 1rem; border: 1px solid #ddd; border-radius: 4px;">
                 <button onclick="loadParticipationTracker()" class="btn-primary" style="padding: 6px 16px;">Apply Filter</button>
             </div>
             <div id="participationDisplay">
@@ -1577,6 +1578,21 @@
                 </div>
             </div>
         </section>
+
+        <!-- My Participation Dashboard Section -->
+        <section id="my-participation" class="content-section">
+            <h2>🏆 My Participation</h2>
+            <p>Select a member to view their complete participation dashboard.</p>
+            <div style="margin: 1rem 0; padding: 1rem; background: #f5f5f5; border-radius: 8px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                <label for="dashboardMemberSelect" style="font-weight: bold;">Select Member:</label>
+                <select id="dashboardMemberSelect" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; min-width: 200px;">
+                    <option value="">-- Choose a member --</option>
+                </select>
+                <button onclick="loadMemberDashboard()" class="btn-primary" style="width: auto; padding: 8px 20px;">Take me to My Dashboard</button>
+                <button onclick="showSection('participation')" style="padding: 8px 16px; background: #666; color: white; border: none; border-radius: 5px; cursor: pointer;">← Back to Tracker</button>
+            </div>
+            <div id="dashboardDisplay"></div>
+        </section>        
 
         <!-- About Section -->
         <section id="about" class="content-section">
@@ -1731,6 +1747,8 @@
                 loadSpeechLog();
             } else if (sectionId === 'participation') {
                 loadParticipationTracker();
+            } else if (sectionId === 'my-participation') {
+                loadDashboardMemberList();
             }
         }
 
@@ -4525,7 +4543,7 @@
                     const rowStyle = index % 2 === 0 ? 'background: #f5f5f5;' : 'background: white;';
                     tableHTML += `
                         <tr style="${rowStyle}">
-                            <td style="padding: 10px; border: 1px solid #ddd;"><strong>${member.name}</strong></td>
+                            <td style="padding: 10px; border: 1px solid #ddd;"><strong><a href="javascript:void(0)" onclick="openMemberDashboard(${member.id})" style="color: #1976d2; text-decoration: none;">${member.name}</a></strong></td>
                             <td style="padding: 10px; text-align: center; border: 1px solid #ddd; background: #e3f2fd;"><strong>${member.total}</strong></td>
                             <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${member.speeches}</td>
                             <td style="padding: 10px; text-align: center; border: 1px solid #ddd;">${member.ttSpeeches}</td>
@@ -4549,6 +4567,204 @@
             } catch (error) {
                 console.error('Error loading participation tracker:', error);
                 participationDisplay.innerHTML = '<p>Error loading participation data. Please try again later.</p>';
+            }
+        }
+        
+        // Load Member Dashboard Functions
+        function openMemberDashboard(memberId) {
+            showSection('my-participation');
+            const select = document.getElementById('dashboardMemberSelect');
+            if (select) {
+                select.value = memberId;
+            }
+            loadMemberDashboard();
+        }
+        async function loadDashboardMemberList() {
+            const select = document.getElementById('dashboardMemberSelect');
+            if (!select || select.options.length > 1) return;
+            try {
+                const response = await fetch('/api/member-dashboard/index');
+                const data = await response.json();
+                data.members.forEach(m => {
+                    const option = document.createElement('option');
+                    option.value = m.id;
+                    option.textContent = m.name;
+                    select.appendChild(option);
+                });
+            } catch (err) {
+                console.error('Error loading member list:', err);
+            }
+        }
+
+        async function loadMemberDashboard() {
+            const memberId = document.getElementById('dashboardMemberSelect').value;
+            const display = document.getElementById('dashboardDisplay');
+            if (!memberId) {
+                display.innerHTML = '<p style="color: #666; text-align: center; padding: 2rem;">Please select a member and click "Take me to My Dashboard".</p>';
+                return;
+            }
+            display.innerHTML = '<div class="loading-container"><div class="loading"></div><p>Loading dashboard...</p></div>';
+            try {
+                const response = await fetch('/api/member-dashboard/index?member_id=' + memberId);
+                const data = await response.json();
+                if (data.error) throw new Error(data.error);
+                renderMemberDashboard(data, display);
+            } catch (err) {
+                console.error('Error loading dashboard:', err);
+                display.innerHTML = '<p style="color: red;">Error loading dashboard. Please try again.</p>';
+            }
+        }
+
+        function getMedalIcon(placement) {
+            if (placement === 1) return '🥇';
+            if (placement === 2) return '🥈';
+            if (placement === 3) return '🥉';
+            return '';
+        }
+
+        function getCategoryLabel(category) {
+            if (category === 'speaker') return 'Best Speaker';
+            if (category === 'evaluator') return 'Best Evaluator';
+            if (category === 'table_topics') return 'Best Table Topics';
+            return category;
+        }
+
+        function formatDate(dateStr) {
+            const d = new Date(dateStr + 'T00:00:00');
+            return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function renderMemberDashboard(data, display) {
+            const { member, speeches, roles, evaluations, tableTopics, attendance, medals, medalSummary } = data;
+            const totalMedals = medalSummary.gold + medalSummary.silver + medalSummary.bronze;
+
+            // Build medal lookup for quick access
+            const medalLookup = {};
+            medals.forEach(m => {
+                const key = m.meeting_id + '_' + m.category;
+                medalLookup[key] = m.placement;
+            });
+
+            let html = '<div style="margin-top: 1rem;">';
+
+            // Member name header
+            html += '<h3 style="color: #1976d2; margin-bottom: 1rem; font-size: 1.5rem;">' + member.name + '\'s Dashboard</h3>';
+
+            // Awards Summary
+            html += '<div style="background: linear-gradient(135deg, #1a237e, #1976d2); color: white; padding: 1.5rem; border-radius: 10px; margin-bottom: 1.5rem;">';
+            html += '<h4 style="margin-bottom: 1rem; font-size: 1.1rem;">🏆 Awards Summary</h4>';
+            html += '<div style="display: flex; gap: 20px; flex-wrap: wrap;">';
+            html += '<div style="text-align: center; min-width: 70px;"><div style="font-size: 2rem;">🥇</div><div style="font-size: 1.5rem; font-weight: bold;">' + medalSummary.gold + '</div><div style="font-size: 0.8rem; opacity: 0.8;">Gold</div></div>';
+            html += '<div style="text-align: center; min-width: 70px;"><div style="font-size: 2rem;">🥈</div><div style="font-size: 1.5rem; font-weight: bold;">' + medalSummary.silver + '</div><div style="font-size: 0.8rem; opacity: 0.8;">Silver</div></div>';
+            html += '<div style="text-align: center; min-width: 70px;"><div style="font-size: 2rem;">🥉</div><div style="font-size: 1.5rem; font-weight: bold;">' + medalSummary.bronze + '</div><div style="font-size: 0.8rem; opacity: 0.8;">Bronze</div></div>';
+            html += '<div style="text-align: center; min-width: 70px; border-left: 1px solid rgba(255,255,255,0.3); padding-left: 20px;"><div style="font-size: 2rem;">🏅</div><div style="font-size: 1.5rem; font-weight: bold;">' + totalMedals + '</div><div style="font-size: 0.8rem; opacity: 0.8;">Total</div></div>';
+            html += '</div></div>';
+
+            // Collapsible sections
+            // Speech History
+            html += renderCollapsibleSection('speechHistory', '🎤 Speech History (' + speeches.length + ')', function() {
+                if (speeches.length === 0) return '<p style="color: #666; padding: 0.5rem;">No speeches recorded yet.</p>';
+                let t = '<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">';
+                t += '<tr style="background: #f5f5f5;"><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Date</th><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Title</th><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Project / Pathway</th><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Evaluator</th><th style="padding: 8px; text-align: center; border-bottom: 2px solid #ddd;">Logged</th></tr>';
+                speeches.forEach(s => {
+                    const medal = medalLookup[s.meeting_id + '_speaker'];
+                    const medalStr = medal ? ' ' + getMedalIcon(medal) : '';
+                    const logged = s.logged_in_pathways ? '<span style="color: #4caf50; font-weight: bold;">✅</span>' : '<a href="javascript:showSection(\'education\')" style="color: #f44336; font-weight: bold; text-decoration: none;">❌</a>';
+                    t += '<tr style="border-bottom: 1px solid #eee;">';
+                    t += '<td style="padding: 8px;">' + formatDate(s.meeting_date) + medalStr + '</td>';
+                    t += '<td style="padding: 8px;">' + (s.speech_title || 'Untitled') + '</td>';
+                    t += '<td style="padding: 8px;">' + (s.speech_project || 'N/A') + '</td>';
+                    t += '<td style="padding: 8px;">' + (s.evaluator_name || '—') + '</td>';
+                    t += '<td style="padding: 8px; text-align: center;">' + logged + '</td>';
+                    t += '</tr>';
+                });
+                t += '</table>';
+                return t;
+            });
+
+            // Role History
+            html += renderCollapsibleSection('roleHistory', '📋 Role History (' + roles.length + ')', function() {
+                if (roles.length === 0) return '<p style="color: #666; padding: 0.5rem;">No roles recorded yet.</p>';
+                let t = '<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">';
+                t += '<tr style="background: #f5f5f5;"><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Date</th><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Role</th></tr>';
+                roles.forEach(r => {
+                    const medal = medalLookup[r.meeting_id + '_evaluator'];
+                    const isEvalRole = r.role_name === 'General Evaluator';
+                    const medalStr = (isEvalRole && medal) ? ' ' + getMedalIcon(medal) : '';
+                    t += '<tr style="border-bottom: 1px solid #eee;">';
+                    t += '<td style="padding: 8px;">' + formatDate(r.meeting_date) + '</td>';
+                    t += '<td style="padding: 8px;">' + r.role_name + medalStr + '</td>';
+                    t += '</tr>';
+                });
+                t += '</table>';
+                return t;
+            });
+
+            // Evaluations Given
+            html += renderCollapsibleSection('evalsGiven', '✍️ Evaluations Given (' + evaluations.length + ')', function() {
+                if (evaluations.length === 0) return '<p style="color: #666; padding: 0.5rem;">No evaluations recorded yet.</p>';
+                let t = '<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">';
+                t += '<tr style="background: #f5f5f5;"><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Date</th><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Evaluated</th></tr>';
+                evaluations.forEach(e => {
+                    t += '<tr style="border-bottom: 1px solid #eee;">';
+                    t += '<td style="padding: 8px;">' + formatDate(e.meeting_date) + '</td>';
+                    t += '<td style="padding: 8px;">' + e.speaker_name + '</td>';
+                    t += '</tr>';
+                });
+                t += '</table>';
+                return t;
+            });
+
+            // Table Topics
+            html += renderCollapsibleSection('ttHistory', '💬 Table Topics (' + tableTopics.length + ')', function() {
+                if (tableTopics.length === 0) return '<p style="color: #666; padding: 0.5rem;">No Table Topics participation recorded yet.</p>';
+                let t = '<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">';
+                t += '<tr style="background: #f5f5f5;"><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Date</th></tr>';
+                tableTopics.forEach(tt => {
+                    const medal = medalLookup[tt.meeting_id + '_table_topics'];
+                    const medalStr = medal ? ' ' + getMedalIcon(medal) : '';
+                    t += '<tr style="border-bottom: 1px solid #eee;">';
+                    t += '<td style="padding: 8px;">' + formatDate(tt.meeting_date) + medalStr + '</td>';
+                    t += '</tr>';
+                });
+                t += '</table>';
+                return t;
+            });
+
+            // Attendance
+            html += renderCollapsibleSection('attendanceHistory', '📅 Attendance (' + attendance.length + ' meetings)', function() {
+                if (attendance.length === 0) return '<p style="color: #666; padding: 0.5rem;">No attendance records yet.</p>';
+                let t = '<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">';
+                t += '<tr style="background: #f5f5f5;"><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Date</th></tr>';
+                attendance.forEach(a => {
+                    t += '<tr style="border-bottom: 1px solid #eee;">';
+                    t += '<td style="padding: 8px;">' + formatDate(a.meeting_date) + '</td>';
+                    t += '</tr>';
+                });
+                t += '</table>';
+                return t;
+            });
+
+            html += '</div>';
+            display.innerHTML = html;
+        }
+
+        function renderCollapsibleSection(id, title, contentFn) {
+            return '<div style="margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">' +
+                '<div onclick="toggleDashboardSection(\'' + id + '\')" style="background: #f5f5f5; padding: 12px 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: bold;">' +
+                '<span>' + title + '</span><span id="arrow_' + id + '">▶</span></div>' +
+                '<div id="section_' + id + '" style="display: none; padding: 12px 16px;">' + contentFn() + '</div></div>';
+        }
+
+        function toggleDashboardSection(id) {
+            const section = document.getElementById('section_' + id);
+            const arrow = document.getElementById('arrow_' + id);
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+                arrow.textContent = '▼';
+            } else {
+                section.style.display = 'none';
+                arrow.textContent = '▶';
             }
         }
 

@@ -90,6 +90,7 @@ module.exports = async (req, res) => {
                                  grammarianCount + timerCount;
 
         participationData.push({
+          id: member.id,
           name: member.name,
           speeches: speechCount,
           ttSpeeches: ttSpeechCount,
