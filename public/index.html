@@ -1563,13 +1563,17 @@
         <section id="participation" class="content-section">
             <h2>📊 Participation Tracker</h2>
             <p>The most recent membership period began on October 1, 2025.</p>
-            <div style="margin: 1rem 0; padding: 1rem; background: #f5f5f5; border-radius: 8px;">
-                <label style="margin-right: 10px;">Filter by Date Range:</label>
-                <label style="margin-right: 5px;">From:</label>
-                <input type="date" id="participationStartDate" value="2025-10-01" style="margin-right: 15px; padding: 8px 12px; font-size: 1rem; border: 1px solid #ddd; border-radius: 4px;">
-                <label style="margin-right: 5px;">To:</label>
-                <input type="date" id="participationEndDate" style="margin-right: 15px; padding: 8px 12px; font-size: 1rem; border: 1px solid #ddd; border-radius: 4px;">
-                <button onclick="loadParticipationTracker()" class="btn-primary" style="padding: 6px 16px;">Apply Filter</button>
+            <div style="margin: 1rem 0; padding: 1.2rem; background: white; border: 1px solid #e0e0e0; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                <span style="font-weight: 600; color: #1976d2;">Filter by Date Range</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-size: 0.9rem; color: #555;">From:</label>
+                    <input type="date" id="participationStartDate" value="2025-10-01" style="padding: 10px 14px; font-size: 0.95rem; border: 2px solid #e0e0e0; border-radius: 8px; color: #333; background: #fafafa; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1976d2'" onblur="this.style.borderColor='#e0e0e0'">
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label style="font-size: 0.9rem; color: #555;">To:</label>
+                    <input type="date" id="participationEndDate" style="padding: 10px 14px; font-size: 0.95rem; border: 2px solid #e0e0e0; border-radius: 8px; color: #333; background: #fafafa; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1976d2'" onblur="this.style.borderColor='#e0e0e0'">
+                </div>
+                <button onclick="loadParticipationTracker()" class="btn-primary" style="width: auto; padding: 10px 24px; border-radius: 8px; font-size: 0.95rem;">Apply Filter</button>
             </div>
             <div id="participationDisplay">
                 <div class="loading-container">
