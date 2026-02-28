@@ -4692,9 +4692,7 @@
                 let t = '<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">';
                 t += '<tr style="background: #f5f5f5;"><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Date</th><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Role</th></tr>';
                 roles.forEach(r => {
-                    const medal = medalLookup[r.meeting_id + '_evaluator'];
-                    const isEvalRole = r.role_name === 'General Evaluator';
-                    const medalStr = (isEvalRole && medal) ? ' ' + getMedalIcon(medal) : '';
+                    const medalStr = "";
                     t += '<tr style="border-bottom: 1px solid #eee;">';
                     t += '<td style="padding: 8px;">' + formatDate(r.meeting_date) + '</td>';
                     t += '<td style="padding: 8px;">' + r.role_name + medalStr + '</td>';
@@ -4710,8 +4708,10 @@
                 let t = '<table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">';
                 t += '<tr style="background: #f5f5f5;"><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Date</th><th style="padding: 8px; text-align: left; border-bottom: 2px solid #ddd;">Evaluated</th></tr>';
                 evaluations.forEach(e => {
+                    const medal = medalLookup[e.meeting_id + '_evaluator'];
+                    const medalStr = medal ? ' ' + getMedalIcon(medal) : '';
                     t += '<tr style="border-bottom: 1px solid #eee;">';
-                    t += '<td style="padding: 8px;">' + formatDate(e.meeting_date) + '</td>';
+                    t += '<td style="padding: 8px;">' + formatDate(e.meeting_date) + medalStr + '</td>';
                     t += '<td style="padding: 8px;">' + e.speaker_name + '</td>';
                     t += '</tr>';
                 });

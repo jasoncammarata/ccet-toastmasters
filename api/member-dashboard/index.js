@@ -57,15 +57,25 @@ module.exports = async (req, res) => {
       }
       roles.sort((a, b) => b.meeting_date.localeCompare(a.meeting_date));
 
-      // Evaluations given
-      const evaluations = db.prepare(`
-        SELECT mt.date as meeting_date, m2.name as speaker_name
+      const speechEvals = db.prepare(`
+        SELECT mt.date as meeting_date, mt.id as meeting_id, m2.name as speaker_name
         FROM speeches s
         JOIN meetings mt ON s.meeting_id = mt.id
         JOIN members m2 ON s.speaker_id = m2.id
         WHERE s.evaluator_id = ?
         ORDER BY mt.date DESC
       `).all(memberId);
+      const slotEvals = db.prepare(`
+        SELECT mt.date as meeting_date, mt.id as meeting_id
+        FROM evaluators e
+        JOIN meetings mt ON e.meeting_id = mt.id
+        WHERE e.member_id = ?
+        AND NOT EXISTS (
+          SELECT 1 FROM speeches s WHERE s.meeting_id = e.meeting_id AND s.evaluator_id = e.member_id
+        )
+        ORDER BY mt.date DESC
+      `).all(memberId);
+      const evaluations = [...speechEvals, ...slotEvals.map(e => ({...e, speaker_name: "—"}))].sort((a, b) => b.meeting_date.localeCompare(a.meeting_date));
 
       // Table Topics participation
       const tableTopics = db.prepare(`
@@ -106,16 +116,16 @@ module.exports = async (req, res) => {
       });
 
       for (const key of Object.keys(meetingCategories)) {
-        const [meetingId, category] = key.split('_');
+        const splitIdx = key.indexOf('_'); const meetingId = key.substring(0, splitIdx); const category = key.substring(splitIdx + 1);
         // Get all nominees ranked for this meeting+category
         const allScores = db.prepare(`
-          SELECT nominee_member_id,
+          SELECT nominee_member_id, nominee_guest_id,
             SUM(CASE WHEN rank = 1 THEN 3 WHEN rank = 2 THEN 2 WHEN rank = 3 THEN 1 ELSE 0 END) as total_points,
             SUM(CASE WHEN rank = 1 THEN 1 ELSE 0 END) as first_place_votes,
             SUM(CASE WHEN rank = 2 THEN 1 ELSE 0 END) as second_place_votes
           FROM votes
-          WHERE meeting_id = ? AND category = ? AND nominee_member_id IS NOT NULL
-          GROUP BY nominee_member_id
+          WHERE meeting_id = ? AND category = ?
+          GROUP BY nominee_member_id, nominee_guest_id
           ORDER BY total_points DESC, first_place_votes DESC, second_place_votes DESC
         `).all(parseInt(meetingId), category);
 
