@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://ccet-toastmasters.com/sitemap.xml
+Sitemap: https://ccet-toastmasters.org/sitemap.xml
