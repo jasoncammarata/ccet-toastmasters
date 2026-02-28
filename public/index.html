@@ -2176,6 +2176,7 @@
                         <div style="text-align: center; margin: 0.75rem 0 1rem;">
                             <button id="openVotingBtn" onclick="openVoting()" style="background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: bold; margin-right: 0.5rem;">🗳️ Open Voting</button>
                             <button id="closeVotingBtn" onclick="closeVoting()" style="background: #f44336; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: bold; display: none;">🔒 Close Voting</button>
+                            <button id="showResultsBtn" onclick="showVotingResults()" style="background: #9c27b0; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem; font-weight: bold; display: none;">🏆 Show Voting Results</button>
                             <div id="votingStatusText" style="margin-top: 0.5rem; font-size: 0.9rem; color: #666;"></div>
                         </div>
                     </div>
@@ -2405,6 +2406,8 @@
                     document.getElementById("openVotingBtn").style.display = "none";
                     document.getElementById("closeVotingBtn").style.display = "inline-block";
                     document.getElementById("votingStatusText").textContent = "Voting is open";
+                    document.getElementById("showResultsBtn").style.display = "none";
+                    document.getElementById("showResultsBtn").style.display = "none";
                     window.open("/voting-display?meeting_id=" + selectedMeetingId, "votingDisplay", "width=1280,height=720");
                 } else {
                     alert(data.error || "Failed to open voting");
@@ -2430,6 +2433,7 @@
                     document.getElementById("votingStatusText").textContent = "Voting is closed - results displayed";
                     const resultsResp = await fetch("/api/voting/index?meeting_id=" + selectedMeetingId);
                     const resultsData = await resultsResp.json();
+                    document.getElementById("showResultsBtn").style.display = "inline-block";
                     displayMedals(resultsData.results);
                 } else {
                     alert(data.error || "Failed to close voting");
@@ -2476,6 +2480,9 @@
                 }
             });
         }
+        function showVotingResults() {
+            window.open("/voting-display?meeting_id=" + selectedMeetingId, "votingDisplay", "width=1280,height=720");
+        }
         async function checkVotingStatus() {
             if (!selectedMeetingId) return;
             try {
@@ -2491,24 +2498,29 @@
                     document.getElementById("openVotingBtn").style.display = "none";
                     document.getElementById("closeVotingBtn").style.display = "none";
                     document.getElementById("votingStatusText").textContent = "Voting is locked for this meeting";
+                    document.getElementById("showResultsBtn").style.display = data.results ? "inline-block" : "none";
                     if (data.results) displayMedals(data.results);
                 } else if (data.status === "open") {
                     document.getElementById("openVotingBtn").style.display = "none";
                     document.getElementById("closeVotingBtn").style.display = "inline-block";
                     document.getElementById("votingStatusText").textContent = "Voting is open - " + data.voteCount + " of " + data.attendanceCount + " have voted";
+                    document.getElementById("showResultsBtn").style.display = "none";
                 } else if (!isMeetingDay) {
                     document.getElementById("openVotingBtn").style.display = "none";
                     document.getElementById("closeVotingBtn").style.display = "none";
                     document.getElementById("votingStatusText").textContent = "Voting can only be opened on the day of the meeting";
+                    document.getElementById("showResultsBtn").style.display = data.results ? "inline-block" : "none";
                 } else if (data.status === "closed" && data.voteCount > 0) {
                     document.getElementById("openVotingBtn").style.display = "inline-block";
                     document.getElementById("closeVotingBtn").style.display = "none";
                     document.getElementById("votingStatusText").textContent = "Voting closed - " + data.voteCount + " votes recorded";
+                    document.getElementById("showResultsBtn").style.display = "inline-block";
                     if (data.results) displayMedals(data.results);
                 } else {
                     document.getElementById("openVotingBtn").style.display = "inline-block";
                     document.getElementById("closeVotingBtn").style.display = "none";
                     document.getElementById("votingStatusText").textContent = "";
+                    document.getElementById("showResultsBtn").style.display = "none";
                 }
             } catch (err) {
                 console.error("Check voting status error:", err);
