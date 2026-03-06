@@ -1096,6 +1096,8 @@
                 <div class="role-card" style="max-width: 600px; margin: 0 auto; background: #fff3e0; border-left-color: #ff9800;">
                     <h3>🗳️ Voting is Open — Vote Now!</h3>
                     <p id="votingMeetingDate" style="font-size: 1.1rem; margin-bottom: 1rem;"></p>
+                    <div id="votingQRCode" style="margin: 1rem 0;"></div>
+                    <p style="color: #666; margin-bottom: 1rem;">Scan the QR code or click the button below to vote</p>
                     <button id="homeVoteButton" onclick="" class="btn-primary" style="width: auto; padding: 12px 24px; background: #ff9800;">
                         🏆 Vote Now
                     </button>
@@ -1761,6 +1763,8 @@
                 loadParticipationTracker();
             } else if (sectionId === 'my-participation') {
                 loadDashboardMemberList();
+            } else if (sectionId === "home") {
+                checkMeetingDayVoting();
             }
         }
 
@@ -4308,6 +4312,9 @@
                         const meetingDate = new Date(todayMeeting.date + "T00:00:00");
                         dateEl.textContent = meetingDate.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
                         btnEl.onclick = () => window.open("/vote?meeting_id=" + todayMeeting.id, "_blank");
+                        const voteUrl = window.location.origin + "/vote?meeting_id=" + todayMeeting.id;
+                        const qrEl = document.getElementById("votingQRCode");
+                        qrEl.innerHTML = "<img src=\"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(voteUrl) + "\" alt=\"Voting QR Code\" style=\"max-width: 250px;\">";
                         votingDiv.style.display = "block";
                     }
                 }
