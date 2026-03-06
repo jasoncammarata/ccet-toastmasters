@@ -75,6 +75,13 @@ module.exports = async (req, res) => {
             VALUES (?, ?, ?)
           `).run(meetingId, slotNumber, actualEvaluatorId);
         }
+        // Sync evaluator to matching speech by slot position
+        const speechIds = db.prepare(
+          "SELECT id FROM speeches WHERE meeting_id = ? AND speaker_id IS NOT NULL ORDER BY id"
+        ).all(meetingId);
+        if (speechIds[slotNumber]) {
+          db.prepare("UPDATE speeches SET evaluator_id = ? WHERE id = ?").run(actualEvaluatorId, speechIds[slotNumber].id);
+        }
 
         res.json({ success: true, evaluatorId: actualEvaluatorId });
       } catch (error) {
@@ -96,6 +103,13 @@ module.exports = async (req, res) => {
         db.prepare(`
           DELETE FROM evaluators
           WHERE meeting_id = ? AND slot_number = ?
+        // Clear evaluator from matching speech by slot position
+        const speechIds = db.prepare(
+          "SELECT id FROM speeches WHERE meeting_id = ? AND speaker_id IS NOT NULL ORDER BY id"
+        ).all(meetingId);
+        if (speechIds[slotNumber]) {
+          db.prepare("UPDATE speeches SET evaluator_id = NULL WHERE id = ?").run(speechIds[slotNumber].id);
+        }
         `).run(meetingId, slotNumber);
 
         res.json({ success: true });
