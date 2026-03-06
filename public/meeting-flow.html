@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meeting Flow - Crystal City Evening Toastmasters</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap');
+        :root {
+            --bg-primary: #0a0f1a; --bg-screen: #0d1b2a;
+            --bg-card: rgba(255,255,255,0.04); --bg-card-hover: rgba(255,255,255,0.07);
+            --accent-blue: #4da6ff; --accent-blue-dim: rgba(77,166,255,0.15);
+            --accent-gold: #ffd54f; --accent-green: #66bb6a;
+            --accent-red: #ef5350; --accent-purple: #b388ff;
+            --text-primary: #e8edf5; --text-secondary: rgba(232,237,245,0.6);
+            --text-dim: rgba(232,237,245,0.35); --border-subtle: rgba(255,255,255,0.08);
+            --nav-idle: rgba(255,255,255,0.12); --nav-hover: rgba(255,255,255,0.5);
+            --nav-active: var(--accent-blue);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Outfit',sans-serif; background:var(--bg-primary); color:var(--text-primary); height:100vh; width:100vw; overflow:hidden; user-select:none; }
+        .flow-container { position:relative; width:100%; height:100%; }
+        .screen { position:absolute; inset:0; display:none; flex-direction:column; padding:2.5rem 3.5rem 4.5rem; background:var(--bg-screen); opacity:0; transition:opacity 0.35s ease; }
+        .screen.active { display:flex; opacity:1; }
+        .screen.fade-out { display:flex; opacity:0; }
+        .screen-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:1.75rem; padding-bottom:1rem; border-bottom:1px solid var(--border-subtle); }
+        .screen-header .title-area h1 { font-family:'Source Serif 4',serif; font-size:2rem; font-weight:700; letter-spacing:-0.02em; }
+        .screen-header .title-area .subtitle { font-size:0.95rem; color:var(--text-secondary); margin-top:0.15rem; }
+        .screen-header .word-of-day { padding:0.5rem 1rem; background:rgba(255,213,79,0.08); border:1px solid rgba(255,213,79,0.2); border-radius:8px; display:flex; align-items:center; gap:0.6rem; white-space:nowrap; }
+        .screen-header .word-of-day .wod-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent-gold); opacity:0.8; }
+        .screen-header .word-of-day .wod-word { font-family:'Source Serif 4',serif; font-size:2rem; font-weight:700; color:var(--accent-gold); }
+        .screen-header .word-of-day .wod-word a { color:inherit; text-decoration:none; }
+        .screen-header .word-of-day .wod-word a:hover { text-decoration:underline; }
+        .nav-arrow { position:fixed; top:50%; transform:translateY(-50%); z-index:100; width:52px; height:72px; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.25); border:1px solid var(--nav-idle); border-radius:10px; color:rgba(255,255,255,0.2); font-size:1.6rem; cursor:pointer; transition:all 0.25s ease; backdrop-filter:blur(4px); }
+        .nav-arrow:hover { background:rgba(0,0,0,0.5); border-color:var(--nav-hover); color:rgba(255,255,255,0.85); }
+        .nav-arrow.disabled { opacity:0.15; cursor:not-allowed; pointer-events:none; }
+        .nav-arrow.blocked { opacity:0.3; cursor:not-allowed; }
+        .nav-arrow.blocked:hover { border-color:var(--accent-red); color:var(--accent-red); }
+        #prevArrow { left:12px; } #nextArrow { right:12px; }
+        .nav-arrow svg { width:24px; height:24px; stroke:currentColor; stroke-width:2.5; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+        .screen-indicator { position:fixed; bottom:16px; left:50%; transform:translateX(-50%); z-index:100; display:flex; align-items:center; gap:10px; padding:8px 18px; background:rgba(0,0,0,0.35); border:1px solid var(--border-subtle); border-radius:24px; backdrop-filter:blur(4px); }
+        .screen-dot { width:10px; height:10px; border-radius:50%; background:var(--nav-idle); transition:all 0.3s ease; }
+        .screen-dot.active { background:var(--nav-active); box-shadow:0 0 8px rgba(77,166,255,0.5); transform:scale(1.2); }
+        .screen-dot.interactive { border:1.5px solid var(--accent-gold); }
+        .screen-counter { font-size:0.75rem; color:var(--text-dim); margin-left:6px; font-variant-numeric:tabular-nums; }
+        .action-bar { position:absolute; bottom:4.5rem; left:3.5rem; right:3.5rem; display:flex; justify-content:space-between; align-items:center; z-index:50; }
+        .action-btn { padding:12px 28px; border:none; border-radius:8px; font-family:'Outfit',sans-serif; font-size:1rem; font-weight:600; cursor:pointer; transition:all 0.2s ease; display:flex; align-items:center; gap:8px; }
+        .action-btn:hover { transform:translateY(-1px); }
+        .action-btn.open-btn { background:var(--accent-green); color:#1a1a2e; }
+        .action-btn.close-btn { background:var(--accent-red); color:white; }
+        .action-btn.results-btn { background:var(--accent-purple); color:white; }
+        .action-btn:disabled { opacity:0.4; cursor:not-allowed; transform:none; }
+        .action-btn.hidden { display:none; }
+        .screen-body { flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.1) transparent; }
+        .mt-1 { margin-top:0.75rem; } .mt-2 { margin-top:1.5rem; }
+        .empty-list { color:var(--text-dim); font-style:italic; padding:0.5rem; font-size:0.95rem; }
+        /* Check-In */
+        .checkin-counter { display:flex; align-items:center; gap:1rem; padding:0.75rem 1.5rem; background:var(--accent-blue-dim); border:1px solid rgba(77,166,255,0.2); border-radius:10px; }
+        .checkin-counter .counter-num { font-size:1.6rem; font-weight:700; color:var(--accent-blue); font-variant-numeric:tabular-nums; }
+        .checkin-counter .counter-divider { color:var(--text-dim); font-size:1.2rem; }
+        .checkin-counter .counter-members, .checkin-counter .counter-guests, .checkin-counter .counter-total { font-size:0.9rem; color:var(--text-secondary); }
+        .checkin-counter .counter-total .counter-num { color:var(--accent-gold); }
+        .checkin-layout { display:grid; grid-template-columns:340px 1fr; gap:2.5rem; height:100%; }
+        .checkin-qr-section { display:flex; flex-direction:column; align-items:center; padding-top:1rem; }
+        .qr-frame { width:280px; height:280px; background:white; border-radius:16px; display:flex; align-items:center; justify-content:center; padding:12px; box-shadow:0 4px 24px rgba(0,0,0,0.3); position:relative; }
+        .qr-frame img { width:100%; height:100%; object-fit:contain; display:none; }
+        .qr-frame img.loaded { display:block; }
+        .qr-loading { position:absolute; color:#999; font-size:0.9rem; }
+        .qr-loading.hidden { display:none; }
+        .checkin-instructions { margin-top:1.5rem; text-align:center; }
+        .checkin-instructions p { color:var(--text-secondary); font-size:1.1rem; }
+        .checkin-instructions .checkin-alt { font-size:0.85rem; color:var(--text-dim); margin:0.4rem 0; }
+        .checkin-instructions .checkin-url { font-size:1.3rem; font-weight:600; color:var(--accent-blue); }
+        .attendee-columns { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; height:100%; }
+        .attendee-col { display:flex; flex-direction:column; overflow:hidden; }
+        .col-header { font-size:0.85rem; text-transform:uppercase; letter-spacing:0.1em; font-weight:600; padding-bottom:0.6rem; margin-bottom:0.6rem; border-bottom:2px solid; }
+        .members-header { color:var(--accent-blue); border-color:var(--accent-blue); }
+        .guests-header { color:var(--accent-green); border-color:var(--accent-green); }
+        .attendee-list { flex:1; overflow-y:auto; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.08) transparent; }
+        .attendee-list .attendee-name { padding:0.35rem 0.5rem; font-size:1.05rem; border-radius:4px; animation:fadeSlideIn 0.3s ease; }
+        .attendee-list .attendee-name:nth-child(even) { background:rgba(255,255,255,0.02); }
+        @keyframes fadeSlideIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+        /* Summary */
+        .summary-layout { display:grid; grid-template-columns:1fr 1fr; gap:2rem; height:100%; }
+        .summary-col { display:flex; flex-direction:column; }
+        .summary-names { flex:1; display:flex; flex-wrap:wrap; align-content:flex-start; gap:0.4rem 1.5rem; padding-top:0.5rem; }
+        .summary-names .summary-name { font-size:1.25rem; padding:0.4rem 0.75rem; background:var(--bg-card); border-radius:6px; border:1px solid var(--border-subtle); }
+        /* Intro */
+        .intro-layout { padding:0 1rem; }
+        .intro-section-label { font-size:0.8rem; text-transform:uppercase; letter-spacing:0.12em; color:var(--accent-blue); font-weight:600; margin-bottom:0.75rem; padding-bottom:0.4rem; border-bottom:1px solid var(--accent-blue-dim); }
+        .intro-roles-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:0.75rem; margin-bottom:0.5rem; }
+        .intro-role-card { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px; padding:1rem; text-align:center; }
+        .intro-role-title { font-size:0.8rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--accent-blue); font-weight:600; margin-bottom:0.5rem; }
+        .intro-role-name { font-family:'Source Serif 4',serif; font-size:1.3rem; font-weight:600; }
+        .intro-speeches { display:flex; flex-direction:column; gap:0.6rem; }
+        .intro-speech-row { display:grid; grid-template-columns:1.5fr 2.5fr 1.5fr; gap:1.5rem; padding:0.9rem 1.25rem; background:var(--bg-card); border:1px solid var(--border-subtle); border-left:3px solid var(--accent-blue); border-radius:8px; align-items:center; }
+        .intro-speech-col-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-dim); margin-bottom:0.2rem; }
+        .intro-speech-col-value { font-size:1.1rem; font-weight:500; }
+        .intro-speech-col-value.title-val { font-family:'Source Serif 4',serif; font-style:italic; }
+        /* Speakers */
+        .speakers-layout { display:flex; flex-direction:column; gap:1.25rem; padding:1rem 2rem; }
+        .speaker-card { display:grid; grid-template-columns:1fr 2fr 1fr; gap:2rem; padding:1.5rem 2rem; background:var(--bg-card); border:1px solid var(--border-subtle); border-left:4px solid var(--accent-blue); border-radius:10px; align-items:center; }
+        .speaker-card .speaker-info h3 { font-family:'Source Serif 4',serif; font-size:1.5rem; font-weight:600; margin-bottom:0.2rem; }
+        .speaker-card .speaker-info .project-name { font-size:0.8rem; color:var(--text-dim); }
+        .speaker-card .speech-title { font-family:'Source Serif 4',serif; font-size:1.4rem; font-style:italic; color:var(--accent-gold); }
+        .speaker-card .evaluator-info { text-align:right; }
+        .speaker-card .evaluator-info .eval-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-dim); margin-bottom:0.2rem; }
+        .speaker-card .evaluator-info .eval-name { font-size:1.25rem; font-weight:500; }
+        /* Table Topics */
+        .tt-layout { display:flex; gap:1.5rem; height:100%; }
+        .tt-checklist { width:280px; flex-shrink:0; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px; padding:1rem; overflow-y:auto; }
+        .tt-checklist-header { font-size:0.8rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent-blue); font-weight:600; padding-bottom:0.5rem; margin-bottom:0.5rem; border-bottom:1px solid var(--border-subtle); }
+        .tt-attendee-row { display:flex; align-items:center; gap:0.6rem; padding:0.4rem 0.3rem; border-radius:6px; cursor:pointer; transition:background 0.15s; }
+        .tt-attendee-row:hover { background:var(--bg-card-hover); }
+        .tt-attendee-row input[type="checkbox"] { width:18px; height:18px; accent-color:var(--accent-green); cursor:pointer; }
+        .tt-attendee-row label { font-size:0.95rem; cursor:pointer; }
+        .tt-attendee-row .att-type { font-size:0.7rem; color:var(--text-dim); margin-left:auto; }
+        .tt-center { flex:1; display:flex; align-items:center; justify-content:center; }
+        .tt-current-speaker { text-align:center; }
+        .tt-prompt { font-size:1.8rem; color:var(--text-dim); font-style:italic; }
+        .tt-speaker-name { font-family:'Source Serif 4',serif; font-size:4.5rem; font-weight:700; animation:fadeSlideIn 0.3s ease; }
+        /* Countdown */
+        .countdown-overlay { position:absolute; inset:0; z-index:200; display:none; align-items:center; justify-content:center; flex-direction:column; background:rgba(10,15,26,0.92); backdrop-filter:blur(8px); }
+        .countdown-overlay.active { display:flex; }
+        .countdown-overlay .countdown-label { font-size:2rem; color:var(--text-secondary); margin-bottom:1rem; }
+        .countdown-overlay .countdown-number { font-family:'Source Serif 4',serif; font-size:10rem; font-weight:800; color:var(--accent-gold); line-height:1; text-shadow:0 0 60px rgba(255,213,79,0.3); transition:transform 0.2s ease; }
+        /* Confirm dialog */
+        .confirm-overlay { position:absolute; inset:0; z-index:200; display:none; align-items:center; justify-content:center; background:rgba(10,15,26,0.85); backdrop-filter:blur(6px); }
+        .confirm-overlay.active { display:flex; }
+        .confirm-dialog { background:#1a2332; border:1px solid var(--border-subtle); border-radius:14px; padding:2.5rem 3rem; text-align:center; max-width:480px; }
+        .confirm-dialog h2 { font-family:'Source Serif 4',serif; font-size:1.5rem; margin-bottom:1rem; }
+        .confirm-dialog p { color:var(--text-secondary); margin-bottom:2rem; font-size:1.05rem; line-height:1.5; }
+        .confirm-dialog .btn-row { display:flex; gap:1rem; justify-content:center; }
+        .confirm-dialog .btn-row button { padding:10px 32px; border:none; border-radius:8px; font-family:'Outfit',sans-serif; font-size:1rem; font-weight:600; cursor:pointer; }
+        .confirm-dialog .btn-yes { background:var(--accent-green); color:#1a1a2e; }
+        .confirm-dialog .btn-no { background:rgba(255,255,255,0.1); color:var(--text-primary); }
+        /* Placeholder */
+        .placeholder { flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; color:var(--text-dim); gap:0.5rem; }
+        .placeholder .icon { font-size:3rem; }
+        .placeholder .label { font-size:1.2rem; }
+    </style>
+</head>
+<body>
+<div class="flow-container" id="flowContainer">
+    <!-- SCREEN 1: Check-In -->
+    <div class="screen" id="screen-0" data-interactive="true" data-action-state="open">
+        <div class="screen-header">
+            <div class="title-area"><h1>Meeting Check-In</h1><div class="subtitle" id="checkin-date"></div></div>
+            <div class="checkin-counter">
+                <span class="counter-members"><span class="counter-num" id="count-members">0</span> Members</span>
+                <span class="counter-divider">|</span>
+                <span class="counter-guests"><span class="counter-num" id="count-guests">0</span> Guests</span>
+                <span class="counter-divider">|</span>
+                <span class="counter-total"><span class="counter-num" id="count-total-att">0</span> Total</span>
+            </div>
+        </div>
+        <div class="screen-body">
+            <div class="checkin-layout">
+                <div class="checkin-qr-section">
+                    <div class="qr-frame"><img id="checkin-qr" src="" alt="QR" /><div class="qr-loading" id="qr-loading">Loading QR code...</div></div>
+                    <div class="checkin-instructions"><p>Scan the QR code to check in</p><p class="checkin-alt">or visit</p><p class="checkin-url">www.ccet-toastmasters.org</p></div>
+                </div>
+                <div class="checkin-attendee-section">
+                    <div class="attendee-columns">
+                        <div class="attendee-col"><div class="col-header members-header">Members</div><div class="attendee-list" id="checkin-members-list"><div class="empty-list">Waiting for check-ins...</div></div></div>
+                        <div class="attendee-col"><div class="col-header guests-header">Guests</div><div class="attendee-list" id="checkin-guests-list"><div class="empty-list">—</div></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="action-bar"><div></div><button class="action-btn close-btn" id="btn-close-checkin" onclick="closeCheckIn()">🔒 Close Check-In</button></div>
+    </div>
+    <!-- SCREEN 2: Summary -->
+    <div class="screen" id="screen-1" data-confirm-next="Are all members and guests listed?">
+        <div class="screen-header">
+            <div class="title-area"><h1>Attendance Summary</h1><div class="subtitle" id="summary-date"></div></div>
+            <div class="checkin-counter">
+                <span class="counter-members"><span class="counter-num" id="summary-count-members">0</span> Members</span>
+                <span class="counter-divider">|</span>
+                <span class="counter-guests"><span class="counter-num" id="summary-count-guests">0</span> Guests</span>
+                <span class="counter-divider">|</span>
+                <span class="counter-total"><span class="counter-num" id="summary-count-total">0</span> Total</span>
+            </div>
+        </div>
+        <div class="screen-body">
+            <div class="summary-layout">
+                <div class="summary-col"><div class="col-header members-header">Members</div><div class="summary-names" id="summary-members-list"></div></div>
+                <div class="summary-col"><div class="col-header guests-header">Guests</div><div class="summary-names" id="summary-guests-list"></div></div>
+            </div>
+        </div>
+    </div>
+    <!-- SCREEN 3: Introduction -->
+    <div class="screen" id="screen-2">
+        <div class="screen-header">
+            <div class="title-area"><h1>Crystal City Evening Toastmasters</h1><div class="subtitle" id="intro-date"></div></div>
+            <div class="word-of-day" id="intro-wod" style="display:none;"><div class="wod-label">Word of the Day</div><div class="wod-word" id="intro-wod-word"></div></div>
+        </div>
+        <div class="screen-body">
+            <div class="intro-layout">
+                <div class="intro-section-label">Meeting Leadership</div>
+                <div class="intro-roles-grid">
+                    <div class="intro-role-card"><div class="intro-role-title">Toastmaster of the Evening</div><div class="intro-role-name" id="intro-tme">—</div></div>
+                    <div class="intro-role-card"><div class="intro-role-title">General Evaluator</div><div class="intro-role-name" id="intro-ge">—</div></div>
+                    <div class="intro-role-card"><div class="intro-role-title">Ah-Counter / Grammarian</div><div class="intro-role-name" id="intro-acg">—</div></div>
+                    <div class="intro-role-card"><div class="intro-role-title">Timer</div><div class="intro-role-name" id="intro-timer">—</div></div>
+                    <div class="intro-role-card"><div class="intro-role-title">Table Topics Master</div><div class="intro-role-name" id="intro-ttm">—</div></div>
+                </div>
+                <div class="intro-section-label mt-2">Prepared Speeches</div>
+                <div class="intro-speeches" id="intro-speeches"><div class="empty-list">No speeches scheduled</div></div>
+            </div>
+        </div>
+    </div>
+    <!-- SCREEN 4: Speakers -->
+    <div class="screen" id="screen-3">
+        <div class="screen-header">
+            <div class="title-area"><h1>Prepared Speeches</h1><div class="subtitle">Speakers &amp; Evaluators</div></div>
+            <div class="word-of-day" id="wod-speakers"><div class="wod-label">Word of the Day</div><div class="wod-word" id="wod-speakers-word">—</div></div>
+        </div>
+        <div class="screen-body"><div class="speakers-layout" id="speakers-list"><div class="empty-list" style="padding:2rem;text-align:center;">Loading speeches...</div></div></div>
+    </div>
+    <!-- SCREEN 5: Table Topics -->
+    <div class="screen" id="screen-4" data-interactive="true" data-action-state="open">
+        <div class="screen-header">
+            <div class="title-area"><h1>Table Topics</h1><div class="subtitle">Impromptu Speaking</div></div>
+            <div class="word-of-day" id="wod-tt"><div class="wod-label">Word of the Day</div><div class="wod-word" id="wod-tt-word">—</div></div>
+        </div>
+        <div class="screen-body">
+            <div class="tt-layout">
+                <div class="tt-checklist" id="tt-checklist" style="display:none;"><div class="tt-checklist-header">Select Speakers</div><div class="tt-checklist-list" id="tt-attendee-list"></div></div>
+                <div class="tt-center"><div class="tt-current-speaker" id="tt-current-speaker"><div class="tt-prompt">Members &amp; guests can volunteer</div></div></div>
+            </div>
+        </div>
+        <div class="action-bar">
+            <button class="action-btn open-btn" id="btn-open-tt" onclick="openTableTopics()">🎙️ Open Table Topics</button>
+            <button class="action-btn close-btn hidden" id="btn-close-tt" onclick="closeTableTopics()">🔒 Close Table Topics</button>
+        </div>
+    </div>
+    <!-- SCREEN 6: Evaluation -->
+    <div class="screen" id="screen-5">
+        <div class="screen-header">
+            <div class="title-area"><h1>Evaluations</h1><div class="subtitle">Speaker Feedback</div></div>
+            <div class="word-of-day" id="wod-eval"><div class="wod-label">Word of the Day</div><div class="wod-word" id="wod-eval-word">—</div></div>
+        </div>
+        <div class="screen-body"><div class="placeholder"><div class="icon">📝</div><div class="label">Evaluators paired with speakers</div></div></div>
+    </div>
+    <!-- SCREEN 7: Voting -->
+    <div class="screen" id="screen-6" data-interactive="true" data-action-state="open">
+        <div class="screen-header">
+            <div class="title-area"><h1>Meeting Awards</h1><div class="subtitle">Vote for your favorites</div></div>
+            <div class="word-of-day" id="wod-vote"><div class="wod-label">Word of the Day</div><div class="wod-word" id="wod-vote-word">—</div></div>
+        </div>
+        <div class="screen-body"><div class="placeholder"><div class="icon">🗳️</div><div class="label">Voting — QR code, vote counter, 5-second countdown</div></div></div>
+        <div class="action-bar">
+            <button class="action-btn open-btn" id="btn-open-voting" onclick="openVoting()">🗳️ Open Voting</button>
+            <button class="action-btn close-btn hidden" id="btn-close-voting" onclick="closeVotingFlow()">🔒 Close Voting</button>
+            <button class="action-btn results-btn hidden" id="btn-show-results">🏆 Show Voting Results</button>
+        </div>
+        <div class="countdown-overlay" id="countdown-overlay"><div class="countdown-label">Results in...</div><div class="countdown-number" id="countdown-number">5</div></div>
+    </div>
+    <!-- SCREEN 8: General Evaluator -->
+    <div class="screen" id="screen-7">
+        <div class="screen-header"><div class="title-area"><h1>General Evaluation</h1><div class="subtitle">Meeting Review</div></div></div>
+        <div class="screen-body"><div class="placeholder"><div class="icon">📊</div><div class="label">General Evaluator flow</div></div></div>
+    </div>
+    <!-- SCREEN 9: Closing -->
+    <div class="screen" id="screen-8">
+        <div class="screen-header"><div class="title-area"><h1>Meeting Closing</h1><div class="subtitle">Thank you for attending!</div></div></div>
+        <div class="screen-body"><div class="placeholder"><div class="icon">🏆</div><div class="label">Medalists, attendee count, next meeting date</div></div></div>
+    </div>
+    <!-- Nav -->
+    <div class="nav-arrow" id="prevArrow" onclick="goToPrev()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"></polyline></svg></div>
+    <div class="nav-arrow" id="nextArrow" onclick="goToNext()"><svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"></polyline></svg></div>
+    <div class="screen-indicator" id="screenIndicator"></div>
+    <div class="confirm-overlay" id="confirmOverlay"><div class="confirm-dialog"><h2 id="confirmTitle">Confirm</h2><p id="confirmMessage">Are you sure?</p><div class="btn-row"><button class="btn-no" onclick="confirmNo()">No</button><button class="btn-yes" onclick="confirmYes()">Yes</button></div></div></div>
+</div>
+<script>
+var TOTAL_SCREENS=9, currentScreen=0, meetingId=null, confirmCallback=null;
+var screenStates={0:'open',4:'open',6:'open'};
+var urlParams=new URLSearchParams(window.location.search);
+meetingId=urlParams.get('meeting_id');
+
+function goToScreen(i){
+    if(i<0||i>=TOTAL_SCREENS)return;
+    var o=document.getElementById('screen-'+currentScreen),n=document.getElementById('screen-'+i);
+    if(i===1)populateSummary();
+    if(i===0&&currentScreen===1&&screenStates[0]==='closed'){
+        screenStates[0]='open';var b=document.getElementById('btn-close-checkin');b.disabled=false;b.textContent='🔒 Close Check-In';startCheckinPolling();
+    }
+    o.classList.add('fade-out');o.classList.remove('active');
+    setTimeout(function(){o.classList.remove('fade-out');n.classList.add('active');currentScreen=i;updateNav();},150);
+}
+function goToPrev(){if(currentScreen>0)goToScreen(currentScreen-1);}
+function goToNext(){
+    var s=document.getElementById('screen-'+currentScreen);
+    if(s.dataset.interactive==='true'&&screenStates[currentScreen]==='active'){shakeArrow('nextArrow');return;}
+    var c=s.dataset.confirmNext;
+    if(c){showConfirm('Before proceeding...',c,function(){goToScreen(currentScreen+1);});return;}
+    if(currentScreen<TOTAL_SCREENS-1)goToScreen(currentScreen+1);
+}
+function shakeArrow(id){var a=document.getElementById(id);a.style.borderColor='var(--accent-red)';a.style.color='var(--accent-red)';setTimeout(function(){a.style.borderColor='';a.style.color='';},600);}
+function updateNav(){
+    var p=document.getElementById('prevArrow'),n=document.getElementById('nextArrow');
+    currentScreen===0?p.classList.add('disabled'):p.classList.remove('disabled');
+    var s=document.getElementById('screen-'+currentScreen),ii=s.dataset.interactive==='true',st=screenStates[currentScreen];
+    n.classList.remove('disabled','blocked');
+    if(currentScreen===TOTAL_SCREENS-1)n.classList.add('disabled');
+    else if(ii&&st==='active')n.classList.add('blocked');
+    updateDots();
+}
+function buildDots(){
+    var c=document.getElementById('screenIndicator'),h='';
+    for(var i=0;i<TOTAL_SCREENS;i++){var ii=[0,4,6].indexOf(i)!==-1;h+='<div class="screen-dot '+(i===0?'active':'')+' '+(ii?'interactive':'')+'" data-screen="'+i+'"></div>';}
+    h+='<span class="screen-counter">1 of '+TOTAL_SCREENS+'</span>';c.innerHTML=h;
+}
+function updateDots(){
+    document.querySelectorAll('.screen-dot').forEach(function(d){d.classList.toggle('active',parseInt(d.dataset.screen)===currentScreen);});
+    var c=document.querySelector('.screen-counter');if(c)c.textContent=(currentScreen+1)+' of '+TOTAL_SCREENS;
+}
+function showConfirm(t,m,cb){document.getElementById('confirmTitle').textContent=t;document.getElementById('confirmMessage').textContent=m;document.getElementById('confirmOverlay').classList.add('active');confirmCallback=cb;}
+function confirmYes(){document.getElementById('confirmOverlay').classList.remove('active');if(confirmCallback)confirmCallback();confirmCallback=null;}
+function confirmNo(){document.getElementById('confirmOverlay').classList.remove('active');if(currentScreen===1)goToScreen(0);confirmCallback=null;}
+
+// Check-In
+var checkinInterval=null, lastAttJSON='';
+function loadCheckinQR(){
+    if(!meetingId)return;
+    fetch('/api/attendance/qrcode?meeting_id='+meetingId).then(function(r){return r.json();}).then(function(d){
+        if(d.qrCode){var img=document.getElementById('checkin-qr');img.src=d.qrCode;img.onload=function(){img.classList.add('loaded');document.getElementById('qr-loading').classList.add('hidden');};}
+    }).catch(function(e){document.getElementById('qr-loading').textContent='QR unavailable';});
+}
+function pollAttendance(){
+    if(!meetingId)return;
+    fetch('/api/attendance/index?meeting_id='+meetingId).then(function(r){return r.json();}).then(function(d){
+        var att=d.attendance||[];
+        var nj=JSON.stringify(att.map(function(a){return a.name+a.type;}));if(nj===lastAttJSON)return;lastAttJSON=nj;
+        var mem=att.filter(function(a){return a.type==='member';}),gst=att.filter(function(a){return a.type==='guest';});
+        document.getElementById('count-members').textContent=mem.length;
+        document.getElementById('count-guests').textContent=gst.length;
+        document.getElementById('count-total-att').textContent=att.length;
+        var ml=document.getElementById('checkin-members-list');
+        ml.innerHTML=mem.length>0?mem.map(function(a){return '<div class="attendee-name">'+a.name+'</div>';}).join(''):'<div class="empty-list">Waiting for check-ins...</div>';
+        var gl=document.getElementById('checkin-guests-list');
+        gl.innerHTML=gst.length>0?gst.map(function(a){return '<div class="attendee-name">'+a.name+'</div>';}).join(''):'<div class="empty-list">—</div>';
+        window.currentAttendance=att;
+    }).catch(function(e){console.error('Poll error:',e);});
+}
+function startCheckinPolling(){loadCheckinQR();pollAttendance();checkinInterval=setInterval(pollAttendance,1000);}
+function stopCheckinPolling(){if(checkinInterval){clearInterval(checkinInterval);checkinInterval=null;}}
+function closeCheckIn(){screenStates[0]='closed';stopCheckinPolling();document.getElementById('btn-close-checkin').disabled=true;document.getElementById('btn-close-checkin').textContent='✅ Check-In Closed';updateNav();}
+
+// Summary
+function populateSummary(){
+    var att=window.currentAttendance||[],mem=att.filter(function(a){return a.type==='member';}),gst=att.filter(function(a){return a.type==='guest';});
+    document.getElementById('summary-count-members').textContent=mem.length;
+    document.getElementById('summary-count-guests').textContent=gst.length;
+    document.getElementById('summary-count-total').textContent=att.length;
+    document.getElementById('summary-members-list').innerHTML=mem.length>0?mem.map(function(a){return '<div class="summary-name">'+a.name+'</div>';}).join(''):'<div class="empty-list">No members checked in</div>';
+    document.getElementById('summary-guests-list').innerHTML=gst.length>0?gst.map(function(a){return '<div class="summary-name">'+a.name+'</div>';}).join(''):'<div class="empty-list">No guests checked in</div>';
+}
+
+// Table Topics
+function openTableTopics(){
+    screenStates[4]='active';
+    document.getElementById('btn-open-tt').classList.add('hidden');
+    document.getElementById('btn-close-tt').classList.remove('hidden');
+    var cl=document.getElementById('tt-checklist');cl.style.display='block';
+    var el=document.getElementById('tt-attendee-list'),att=window.currentAttendance||[];
+    if(att.length>0){
+        el.innerHTML=att.map(function(a){
+            var id=a.member_id?'m_'+a.member_id:'g_'+a.guest_id;
+            var sn=a.name.replace(/'/g,"\\'");
+            return '<div class="tt-attendee-row"><input type="checkbox" id="tt-'+id+'" onchange="ttSpeakerChanged(\''+id+'\',\''+sn+'\')"><label for="tt-'+id+'">'+a.name+'</label><span class="att-type">'+a.type+'</span></div>';
+        }).join('');
+    } else { el.innerHTML='<div class="empty-list">No attendees checked in</div>'; }
+    document.getElementById('tt-current-speaker').innerHTML='<div class="tt-prompt">Select a speaker from the list</div>';
+    updateNav();
+}
+function ttSpeakerChanged(idVal,name){
+    var cb=document.getElementById('tt-'+idVal);
+    if(cb.checked){
+        document.getElementById('tt-current-speaker').innerHTML='<div class="tt-speaker-name">'+name+'</div>';
+    } else {
+        var chk=document.querySelectorAll('#tt-attendee-list input:checked');
+        if(chk.length>0){var lr=chk[chk.length-1].closest('.tt-attendee-row');document.getElementById('tt-current-speaker').innerHTML='<div class="tt-speaker-name">'+lr.querySelector('label').textContent+'</div>';}
+        else{document.getElementById('tt-current-speaker').innerHTML='<div class="tt-prompt">Select a speaker from the list</div>';}
+    }
+    var ig=idVal.startsWith('g_'),body={meeting_id:parseInt(meetingId)};
+    if(ig)body.guest_id=parseInt(idVal.split('_')[1]);else body.member_id=parseInt(idVal.split('_')[1]);
+    fetch('/api/attendance/table-topics?meeting_id='+meetingId,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}).catch(function(e){console.error('TT error:',e);});
+}
+function closeTableTopics(){screenStates[4]='closed';document.getElementById('btn-close-tt').disabled=true;document.getElementById('btn-close-tt').textContent='✅ Table Topics Closed';updateNav();}
+
+// Voting
+function openVoting(){screenStates[6]='active';document.getElementById('btn-open-voting').classList.add('hidden');document.getElementById('btn-close-voting').classList.remove('hidden');updateNav();}
+function closeVotingFlow(){
+    showConfirm('Close Voting','Are you sure you would like to close voting?',function(){
+        screenStates[6]='closed';document.getElementById('btn-close-voting').classList.add('hidden');
+        var ov=document.getElementById('countdown-overlay'),nm=document.getElementById('countdown-number');ov.classList.add('active');
+        var c=5;nm.textContent=c;
+        var t=setInterval(function(){c--;if(c>0){nm.textContent=c;nm.style.transform='scale(1.15)';setTimeout(function(){nm.style.transform='scale(1)';},150);}else{clearInterval(t);ov.classList.remove('active');document.getElementById('btn-show-results').classList.remove('hidden');updateNav();}},1000);
+    });
+}
+
+// Keyboard
+document.addEventListener('keydown',function(e){
+    if(document.getElementById('confirmOverlay').classList.contains('active')){if(e.key==='Enter')confirmYes();if(e.key==='Escape')confirmNo();return;}
+    if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();goToNext();}
+    if(e.key==='ArrowLeft'){e.preventDefault();goToPrev();}
+});
+
+// Meeting data
+window.meetingDetails={roles:{},speeches:[],evaluators:[]};
+function loadMeetingInfo(){
+    if(!meetingId)return;
+    fetch('/api/meetings/index').then(function(r){return r.json();}).then(function(arr){
+        var m=arr.find(function(x){return String(x.id)===String(meetingId);});
+        if(m){
+            var p=m.date.split('-'),d=new Date(p[0],p[1]-1,p[2]);
+            var ds=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+            document.getElementById('checkin-date').textContent=ds;
+            document.getElementById('summary-date').textContent=ds;
+            document.getElementById('intro-date').textContent=ds;
+            window.meetingDate=m.date;window.meetingDateFormatted=ds;
+            var allD=arr.map(function(x){return x.date;}).sort();
+            var idx=allD.indexOf(m.date);
+            if(idx>=0&&idx<allD.length-1){var nd=allD[idx+1].split('-');window.nextMeetingDateFormatted=new Date(nd[0],nd[1]-1,nd[2]).toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});}
+        }
+        loadMeetingDetails();
+    }).catch(function(e){console.error('Info error:',e);});
+}
+function loadMeetingDetails(){
+    if(!meetingId)return;
+    Promise.all([
+        fetch('/api/meetings/roles?meetingId='+meetingId).then(function(r){return r.ok?r.json():[];}),
+        fetch('/api/meetings/speeches?meetingId='+meetingId).then(function(r){return r.ok?r.json():[];}),
+        fetch('/api/meetings/evaluators?meetingId='+meetingId).then(function(r){return r.ok?r.json():[];})
+    ]).then(function(res){
+        var rm={};res[0].forEach(function(r){rm[r.role_name.toLowerCase().replace(/\s+/g,'-')]={name:r.member_name,wordOfTheDay:r.word_of_the_day};});
+        var sl=res[1].map(function(s,i){return{slot:i,name:s.speaker_name,title:s.speech_title,project:s.speech_project||'TBD'};});
+        window.meetingDetails={roles:rm,speeches:sl,evaluators:res[2]};
+        populateIntroScreen();populateSpeakersScreen();populateWordOfDay();
+    }).catch(function(e){console.error('Details error:',e);});
+}
+function getRoleName(k){var r=window.meetingDetails.roles[k];return r?r.name:'Available';}
+function getWordOfDay(){var a=window.meetingDetails.roles['ah-counter/grammarian']||window.meetingDetails.roles['ah-counter-grammarian'];return a?a.wordOfTheDay:null;}
+function populateWordOfDay(){
+    var w=getWordOfDay();if(!w)return;
+    var lnk='<a href="https://www.google.com/search?q=define+'+encodeURIComponent(w)+'" target="_blank">'+w+'</a>';
+    document.getElementById('intro-wod').style.display='flex';document.getElementById('intro-wod-word').innerHTML=lnk;
+    ['speakers','tt','eval','vote'].forEach(function(id){var e=document.getElementById('wod-'+id+'-word');if(e)e.innerHTML=lnk;});
+}
+function populateIntroScreen(){
+    document.getElementById('intro-tme').textContent=getRoleName('toastmaster-of-the-evening');
+    document.getElementById('intro-ge').textContent=getRoleName('general-evaluator');
+    document.getElementById('intro-acg').textContent=getRoleName('ah-counter/grammarian')!=='Available'?getRoleName('ah-counter/grammarian'):getRoleName('ah-counter-grammarian');
+    document.getElementById('intro-timer').textContent=getRoleName('timer');
+    document.getElementById('intro-ttm').textContent=getRoleName('table-topics-master');
+    var d=window.meetingDetails,el=document.getElementById('intro-speeches');
+    if(d.speeches.length>0){
+        var em={};d.evaluators.forEach(function(e){em[e.slot_number]=e.user_name;});
+        el.innerHTML=d.speeches.map(function(s,i){
+            return '<div class="intro-speech-row"><div><div class="intro-speech-col-label">Speaker</div><div class="intro-speech-col-value">'+s.name+'</div></div><div><div class="intro-speech-col-label">Speech Title</div><div class="intro-speech-col-value title-val">"'+s.title+'"</div></div><div><div class="intro-speech-col-label">Evaluator</div><div class="intro-speech-col-value">'+(em[i]||'Available')+'</div></div></div>';
+        }).join('');
+    } else { el.innerHTML='<div class="empty-list">No speeches scheduled</div>'; }
+}
+function populateSpeakersScreen(){
+    var d=window.meetingDetails,c=document.getElementById('speakers-list');
+    if(d.speeches.length===0){c.innerHTML='<div class="empty-list" style="padding:2rem;text-align:center;">No speeches scheduled</div>';return;}
+    var em={};d.evaluators.forEach(function(e){em[e.slot_number]=e.user_name;});
+    c.innerHTML=d.speeches.map(function(s,i){
+        return '<div class="speaker-card"><div class="speaker-info"><h3>'+s.name+'</h3><div class="project-name">'+s.project+'</div></div><div class="speech-title">"'+s.title+'"</div><div class="evaluator-info"><div class="eval-label">Evaluator</div><div class="eval-name">'+(em[i]||'Available')+'</div></div></div>';
+    }).join('');
+}
+
+// Init
+function init(){buildDots();document.getElementById('screen-0').classList.add('active');updateNav();if(meetingId){loadMeetingInfo();startCheckinPolling();}}
+init();
+</script>
+</body>
+</html>
