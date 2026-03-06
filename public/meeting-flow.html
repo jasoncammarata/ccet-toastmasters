@@ -157,19 +157,25 @@
         .ge-step-text .ge-role { color:var(--text-dim); font-size:0.85rem; text-transform:uppercase; letter-spacing:0.06em; }
         /* Closing */
         .closing-layout { padding:1rem 2rem; display:flex; flex-direction:column; gap:1.5rem; }
-        .closing-tme { text-align:center; padding:1rem; }
+        .closing-top-row { display:flex; align-items:center; justify-content:space-between; padding:1rem 2rem; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px; }
+        .closing-tme { text-align:center; flex:1; }
         .closing-tme-label { font-size:0.85rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-dim); margin-bottom:0.3rem; }
         .closing-tme-name { font-family:'Source Serif 4',serif; font-size:2rem; font-weight:700; color:var(--accent-blue); }
         .closing-medalists { margin-top:0.5rem; }
         .closing-medalists h2 { text-align:center; font-family:'Source Serif 4',serif; font-size:1.4rem; color:var(--accent-gold); margin-bottom:1rem; }
-        .closing-stats { display:flex; justify-content:center; gap:3rem; margin-top:1rem; padding:1.25rem; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:10px; }
+        .closing-stats { display:flex; justify-content:center; gap:2.5rem; padding:0.5rem; }
         .closing-stat { text-align:center; }
         .closing-stat .stat-num { font-size:2.5rem; font-weight:700; color:var(--accent-blue); }
         .closing-stat .stat-label { font-size:0.85rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.08em; }
         .closing-stat .stat-num.gold { color:var(--accent-gold); }
         .closing-next { text-align:center; padding:1rem; background:rgba(77,166,255,0.08); border:1px solid rgba(77,166,255,0.2); border-radius:10px; }
         .closing-next .next-label { font-size:0.8rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-dim); margin-bottom:0.3rem; }
-        .closing-next .next-date { font-family:'Source Serif 4',serif; font-size:1.5rem; font-weight:600; color:var(--accent-blue); }
+        .closing-next .next-date { font-family:'Source Serif 4',serif; font-size:2.2rem; font-weight:700; color:var(--accent-blue); }
+        .closing-next .next-type { font-size:1.1rem; color:var(--text-secondary); margin-top:0.3rem; }
+        .closing-guests { text-align:center; padding:0.75rem 1.5rem; flex:1; border-left:1px solid var(--border-subtle); border-right:1px solid var(--border-subtle); }
+        .closing-guests-label { font-family:'Source Serif 4',serif; font-size:1.1rem; font-weight:600; color:var(--accent-gold); margin-bottom:0.5rem; }
+        .closing-guests-names { display:flex; justify-content:center; flex-wrap:wrap; gap:0.75rem; }
+        .closing-guest-name { font-size:1.2rem; padding:0.4rem 1rem; background:rgba(102,187,106,0.1); border:1px solid rgba(102,187,106,0.25); border-radius:20px; color:var(--accent-green); }
         /* Countdown */
         .countdown-overlay { position:absolute; inset:0; z-index:200; display:none; align-items:center; justify-content:center; flex-direction:column; background:rgba(10,15,26,0.92); backdrop-filter:blur(8px); }
         .countdown-overlay.active { display:flex; }
@@ -542,7 +548,7 @@ function loadMeetingDetails(){
         var rm={};res[0].forEach(function(r){rm[r.role_name.toLowerCase().replace(/\s+/g,'-')]={name:r.member_name,wordOfTheDay:r.word_of_the_day};});
         var sl=res[1].map(function(s,i){return{slot:i,name:s.speaker_name,title:s.speech_title,project:s.speech_project||'TBD'};});
         window.meetingDetails={roles:rm,speeches:sl,evaluators:res[2]};
-        populateIntroScreen();populateSpeakersScreen();populateEvalsScreen();populateGEScreen();populateClosingScreen();populateWordOfDay();
+        populateIntroScreen();populateSpeakersScreen();populateEvalsScreen();populateGEScreen();populateClosingScreen();populateWordOfDay();loadVotingResults();loadVotingResults();
     }).catch(function(e){console.error('Details error:',e);});
 }
 function getRoleName(k){var r=window.meetingDetails.roles[k];return r?r.name:'Available';}
@@ -618,6 +624,26 @@ function populateGEScreen(){
         '<div class="ge-step"><div class="ge-step-number">6</div><div class="ge-step-text"><div class="ge-role">General Evaluator</div><div class="ge-name">'+ge+'</div>delivers the overall meeting evaluation</div></div>';
 }
 
+function loadVotingResults(){
+    if(!meetingId)return;
+    fetch('/api/voting/index?meeting_id='+meetingId).then(function(r){return r.json();}).then(function(d){
+        if(d.results){
+            window.votingResults=d.results;
+            populateClosingScreen();
+        }
+    }).catch(function(e){console.error('Voting results error:',e);});
+}
+
+function loadVotingResults(){
+    if(!meetingId)return;
+    fetch('/api/voting/index?meeting_id='+meetingId).then(function(r){return r.json();}).then(function(d){
+        if(d.results){
+            window.votingResults=d.results;
+            populateClosingScreen();
+        }
+    }).catch(function(e){console.error('Voting results error:',e);});
+}
+
 function populateClosingScreen(){
     var c=document.getElementById('closing-content');
     var tme=getRoleName('toastmaster-of-the-evening');
@@ -626,12 +652,32 @@ function populateClosingScreen(){
     var gst=att.filter(function(a){return a.type==='guest';});
     var nextDate=window.nextMeetingDateFormatted||'TBD';
 
+    // Determine next meeting type
+    var nextType='';
+    if(window.nextMeetingDateFormatted){
+        // Parse the next meeting date to check if 1st Tuesday
+        var allMeetings=document.getElementById('checkin-date').textContent;
+        // Use stored next date info
+        if(window.nextMeetingType){nextType=window.nextMeetingType;}
+    }
+
+    // Guest names (first name + last initial)
+    var guestHtml='';
+    if(gst.length>0){
+        var guestNames=gst.map(function(g){
+            var parts=g.name.trim().split(' ');
+            if(parts.length>1){return parts[0]+' '+parts[parts.length-1].charAt(0)+'.';}
+            return parts[0];
+        });
+        guestHtml='<div class="closing-guests"><div class="closing-guests-label">What did you think of our Meeting Today?</div><div class="closing-guests-names">'+guestNames.map(function(n){return '<span class="closing-guest-name">'+n+'</span>';}).join('')+'</div></div>';
+    }
+
     // Build medalists HTML from voting results if available
     var medalsHtml='';
     if(window.votingResults){
         var cats=[{key:'speaker',label:'Best Speaker'},{key:'evaluator',label:'Best Evaluator'},{key:'table_topics',label:'Best Table Topics'}];
         var icons={gold:'\uD83E\uDD47',silver:'\uD83E\uDD48',bronze:'\uD83E\uDD49'};
-        medalsHtml='<div class="closing-medalists"><h2>Meeting Awards</h2><div class="results-grid">';
+        medalsHtml='<div class="closing-medalists"><h2>Congratulations to our Award Winners!</h2><div class="results-grid">';
         cats.forEach(function(cat){
             var entries=window.votingResults[cat.key]||[];
             medalsHtml+='<div class="result-category"><h2>'+cat.label+'</h2>';
@@ -647,10 +693,25 @@ function populateClosingScreen(){
     }
 
     c.innerHTML=
-        '<div class="closing-tme"><div class="closing-tme-label">Meeting closed by</div><div class="closing-tme-name">'+tme+'</div></div>'+
+        '<div class="closing-top-row"><div class="closing-tme"><div class="closing-tme-label">Meeting closed by</div><div class="closing-tme-name">'+tme+'</div></div>'+guestHtml+'<div class="closing-stats"><div class="closing-stat"><div class="stat-num gold">'+att.length+'</div><div class="stat-label">Total Attendees</div></div><div class="closing-stat"><div class="stat-num">'+mem.length+'</div><div class="stat-label">Members</div></div><div class="closing-stat"><div class="stat-num">'+gst.length+'</div><div class="stat-label">Guests</div></div></div></div>'+
         medalsHtml+
-        '<div class="closing-stats"><div class="closing-stat"><div class="stat-num gold">'+att.length+'</div><div class="stat-label">Total Attendees</div></div><div class="closing-stat"><div class="stat-num">'+mem.length+'</div><div class="stat-label">Members</div></div><div class="closing-stat"><div class="stat-num">'+gst.length+'</div><div class="stat-label">Guests</div></div></div>'+
-        '<div class="closing-next"><div class="next-label">Next Meeting</div><div class="next-date">'+nextDate+'</div></div>';
+        '<div class="closing-next"><div class="next-label">Next Meeting</div><div class="next-date">'+nextDate+'</div><div class="next-type"></div></div>';
+
+    // Determine next meeting type from date
+    if(nextDate!=='TBD'){
+        fetch('/api/meetings/index').then(function(r){return r.json();}).then(function(arr){
+            var allDates=arr.map(function(m){return m.date;}).sort();
+            var curIdx=allDates.indexOf(window.meetingDate);
+            if(curIdx>=0&&curIdx<allDates.length-1){
+                var nd=allDates[curIdx+1].split('-');
+                var ndo=new Date(nd[0],nd[1]-1,nd[2]);
+                var isFirst=Math.ceil(ndo.getDate()/7)===1;
+                var typeText=isFirst?'In-Person — Crystal City Community Center':'Virtual — Zoom';
+                var typeEl=document.querySelector('.next-type');
+                if(typeEl)typeEl.textContent=typeText;
+            }
+        }).catch(function(e){});
+    }
 }
 
 // Init
