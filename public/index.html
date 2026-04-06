@@ -2567,9 +2567,6 @@
                 alert('Please select a meeting first.');
                 return;
             }
-            window.open('/meeting-flow.html?meeting_id=' + selectedMeetingId, 'meetingFlow', 'width=1920,height=1080');
-            return;
-            // Legacy presentation mode below (kept for reference)
             
             const meeting = meetings[selectedMeetingId];
             // Fetch QR code and attendance for presentation
