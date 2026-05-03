@@ -11,6 +11,13 @@ module.exports = authMiddleware(async (req, res) => {
         ORDER BY name
       `).all();
       
+      const includeGuests = req.query && req.query.include_guests === 'true';
+      if (includeGuests) {
+        const memberEmails = members.map(m => m.email.toLowerCase());
+        const guests = db.prepare('SELECT id, name, email, phone, created_at FROM guests ORDER BY name').all();
+        const uniqueGuests = guests.filter(g => !memberEmails.includes(g.email.toLowerCase()));
+        return res.json({ members, guests: uniqueGuests });
+      }
       res.json(members);
     } catch (error) {
       console.error('Get members error:', error);

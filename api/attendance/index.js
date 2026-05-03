@@ -77,7 +77,26 @@ module.exports = async (req, res) => {
 
   // POST - check in to a meeting
   else if (req.method === 'POST') {
-    const { meeting_id, guest_name, guest_email, guest_phone, admin_member_email } = req.body;
+    const { meeting_id, guest_name, guest_email, guest_phone, admin_member_email, mailing_list } = req.body;
+
+    // Mailing list sign-up (no meeting_id required)
+    if (mailing_list) {
+      if (!guest_email || !guest_name) {
+        return res.status(400).json({ error: 'Name and email are required' });
+      }
+      try {
+        let guest = db.prepare('SELECT * FROM guests WHERE email = ? COLLATE NOCASE').get(guest_email);
+        if (guest) {
+          return res.json({ success: true, message: 'Already on mailing list' });
+        }
+        db.prepare('INSERT INTO guests (name, email, phone) VALUES (?, ?, ?)').run(guest_name, guest_email, guest_phone || null);
+        return res.json({ success: true, message: 'Added to mailing list' });
+      } catch (error) {
+        console.error('Mailing list error:', error);
+        return res.status(500).json({ error: 'Failed to join mailing list' });
+      }
+    }
+
     if (!meeting_id) {
       return res.status(400).json({ error: 'meeting_id is required' });
     }

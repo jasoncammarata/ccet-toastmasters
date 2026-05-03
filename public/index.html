@@ -1082,15 +1082,29 @@
                 </div>
             </div>
 
-            <div id="meetingDayCheckin" style="display: none; margin-top: 2rem; text-align: center;">
+            <div style="margin-top: 2rem; text-align: center;">
                 <div class="role-card" style="max-width: 600px; margin: 0 auto; background: #e8f5e9; border-left-color: #4caf50;">
-                    <h3>📋 Today's Meeting Check-In</h3>
-                    <p id="checkinMeetingDate" style="font-size: 1.1rem; margin-bottom: 1rem;"></p>
-                    <div id="checkinQRCode" style="margin: 1rem 0;"></div>
-                    <p style="color: #666; margin-bottom: 1rem;">Scan the QR code or click the button below to check in</p>
-                    <button id="checkinButton" onclick="" class="btn-primary" style="width: auto; padding: 12px 24px; background: #4caf50;">
-                        ✅ Check In Now
-                    </button>
+                    <h3>📬 Interested in attending a meeting or becoming a member?</h3>
+                    <p style="font-size: 1.1rem; margin-bottom: 1rem;">Join our mailing list to stay informed about upcoming meetings and events!</p>
+                    <div id="mailingListForm">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                            <input type="text" id="mlFirstName" placeholder="First Name *" style="width: 100%; padding: 10px 14px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;" required>
+                            <input type="text" id="mlLastName" placeholder="Last Name *" style="width: 100%; padding: 10px 14px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;" required>
+                        </div>
+                        <div style="margin-bottom: 0.75rem;">
+                            <input type="email" id="mlEmail" placeholder="Email *" style="width: 100%; padding: 10px 14px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;" required>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <input type="tel" id="mlPhone" placeholder="Phone Number (optional)" style="width: 100%; padding: 10px 14px; border: 2px solid #ddd; border-radius: 8px; font-size: 1rem;">
+                        </div>
+                        <button onclick="submitMailingList()" class="btn-primary" style="width: auto; padding: 12px 24px; background: #4caf50;">
+                            📬 Join Mailing List
+                        </button>
+                    </div>
+                    <div id="mailingListSuccess" style="display: none;">
+                        <p style="color: #2e7d32; font-size: 1.2rem; font-weight: 600;">✅ You've been added to our mailing list!</p>
+                        <p style="color: #666; margin-top: 0.5rem;">We'll keep you informed about upcoming meetings and events.</p>
+                    </div>
                 </div>
             <div id="meetingDayVoting" style="display: none; margin-top: 1rem; text-align: center;">
                 <div class="role-card" style="max-width: 600px; margin: 0 auto; background: #fff3e0; border-left-color: #ff9800;">
@@ -1146,15 +1160,7 @@
                     </div>
                 </div>
 
-                <div class="role-card">
-                    <h3>📧 Email Roster</h3>
-                    <p>Generate and copy email list of all active members.</p>
-                    <div style="margin-top: 1rem;">
-                        <button onclick="showEmailRoster()" class="btn-primary" style="width: auto; padding: 8px 16px;">
-                            View Email Roster
-                        </button>
-                    </div>
-                </div>
+
 
                 <div class="role-card">
                     <h3>📅 Edit Meeting Agendas</h3>
@@ -1193,31 +1199,6 @@
             </div>
 
             <!-- Email Roster Panel -->
-            <div id="emailRosterPanel" style="display: none; margin-top: 2rem;">
-                <div class="agenda-section">
-                    <div class="agenda-header">
-                        📧 Member Email Roster
-                    </div>
-                    <div class="agenda-content">
-                        <p style="margin-bottom: 1rem;">Copy the email list below to use in your email client:</p>
-                        <div class="email-roster">
-                            <div class="email-list" id="emailRosterList">
-                                <div class="loading-container">
-                                    <div class="loading"></div>
-                                    <p>Loading email roster...</p>
-                                </div>
-                            </div>
-                            <button onclick="copyEmailRoster()" class="copy-button">Copy All Emails</button>
-                        </div>
-                        <div style="text-align: center; margin-top: 1rem;">
-                            <button onclick="hideEmailRoster()" class="btn-primary" style="width: auto; padding: 8px 16px; background: #666;">
-                                Close
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Agenda Editor Panel -->
             <div id="agendaEditorPanel" style="display: none; margin-top: 2rem;">
                 <div class="agenda-section">
@@ -1301,32 +1282,25 @@
                         📧 Email Roster Management
                     </div>
                     <div class="agenda-content">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem;">
-                            <div>
-                                <h4 style="color: #1976d2; margin-bottom: 1rem;">📋 Current Member List</h4>
-                                <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; max-height: 300px; overflow-y: auto;">
-                                    <div id="memberListDisplay">
-                                        <div class="loading-container">
-                                            <div class="loading"></div>
-                                            <p>Loading members...</p>
-                                        </div>
-                                    </div>
+                        <p style="margin-bottom: 1rem;">Select a category, then copy the email list to use in your email client:</p>
+                        <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                            <button onclick="loadDashRosterTab('all')" id="dash-roster-tab-all" class="btn-primary" style="width: auto; padding: 8px 16px; background: #1976d2; font-size: 0.9rem;">📋 All Emails</button>
+                            <button onclick="loadDashRosterTab('active')" id="dash-roster-tab-active" class="btn-primary" style="width: auto; padding: 8px 16px; background: #666; font-size: 0.9rem;">✅ Active Members</button>
+                            <button onclick="loadDashRosterTab('previous')" id="dash-roster-tab-previous" class="btn-primary" style="width: auto; padding: 8px 16px; background: #666; font-size: 0.9rem;">📁 Previous Members</button>
+                            <button onclick="loadDashRosterTab('prospective')" id="dash-roster-tab-prospective" class="btn-primary" style="width: auto; padding: 8px 16px; background: #666; font-size: 0.9rem;">📬 Prospective Members</button>
+                        </div>
+                        <div id="dashRosterTabLabel" style="font-weight: 600; margin-bottom: 0.5rem; color: #1976d2;">All Emails</div>
+                        <div id="dashRosterCount" style="font-size: 0.85rem; color: #666; margin-bottom: 0.5rem;"></div>
+                        <div class="email-roster">
+                            <div class="email-list" id="dashboardEmailList" style="max-height: 250px;">
+                                <div class="loading-container">
+                                    <div class="loading"></div>
+                                    <p>Loading emails...</p>
                                 </div>
                             </div>
-                            <div>
-                                <h4 style="color: #1976d2; margin-bottom: 1rem;">📧 Email Roster</h4>
-                                <div class="email-roster">
-                                    <div class="email-list" id="dashboardEmailList" style="max-height: 200px;">
-                                        <div class="loading-container">
-                                            <div class="loading"></div>
-                                            <p>Loading emails...</p>
-                                        </div>
-                                    </div>
-                                    <button onclick="copyDashboardEmails()" class="copy-button">Copy All Emails</button>
-                                    <button onclick="refreshEmailRoster()" class="btn-primary" style="width: auto; padding: 8px 16px; margin-left: 10px;">
-                                        Refresh List
-                                    </button>
-                                </div>
+                            <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem;">
+                                <button onclick="copyDashboardEmails()" class="copy-button">📋 Copy Emails</button>
+                                <button onclick="refreshDashRoster()" class="btn-primary" style="width: auto; padding: 8px 16px;">🔄 Refresh</button>
                             </div>
                         </div>
                     </div>
@@ -3613,9 +3587,7 @@
             }
         }
 
-        function hideEmailRoster() {
-            document.getElementById('emailRosterPanel').style.display = 'none';
-        }
+
 
         function showAgendaEditor() {
             if (!currentUser || !currentUser.isAdmin) {
@@ -3683,7 +3655,7 @@
             console.log('Initializing dashboard...');
             
             try {
-                await refreshEmailRoster();
+                await refreshDashRoster();
                 
                 const emailSection = document.getElementById('emailRosterSection');
                 const memberSection = document.getElementById('memberManagementSection');
@@ -3729,6 +3701,56 @@
             } else {
                 section.style.display = 'none';
             }
+        }
+
+        var dashRosterData = { active: [], previous: [], prospective: [] };
+
+        async function refreshDashRoster() {
+            try {
+                const res = await fetch('/api/members/index?include_guests=true', {
+                    headers: { 'Authorization': 'Bearer ' + apiClient.token }
+                });
+                const data = await res.json();
+                if (data.members) {
+                    dashRosterData.active = data.members.filter(m => m.is_active !== 0 && m.email !== 'CCET_Admin').map(m => m.email);
+                    dashRosterData.previous = data.members.filter(m => m.is_active === 0).map(m => m.email);
+                } else {
+                    // Fallback if API returns array directly
+                    dashRosterData.active = data.filter(m => m.is_active !== 0 && m.email !== 'CCET_Admin').map(m => m.email);
+                    dashRosterData.previous = data.filter(m => m.is_active === 0).map(m => m.email);
+                }
+                if (data.guests) {
+                    dashRosterData.prospective = data.guests.map(g => g.email);
+                }
+                loadDashRosterTab('all');
+            } catch (error) {
+                document.getElementById('dashboardEmailList').innerHTML = '<p style="color: #d32f2f;">Failed to load emails.</p>';
+            }
+        }
+
+        function loadDashRosterTab(tab) {
+            var emails = [];
+            var label = '';
+            ['all','active','previous','prospective'].forEach(function(t) {
+                document.getElementById('dash-roster-tab-' + t).style.background = (t === tab) ? '#1976d2' : '#666';
+            });
+            if (tab === 'all') {
+                emails = [].concat(dashRosterData.active, dashRosterData.previous, dashRosterData.prospective);
+                emails = emails.filter(function(e, i) { return emails.indexOf(e) === i; });
+                label = 'All Emails';
+            } else if (tab === 'active') {
+                emails = dashRosterData.active;
+                label = 'Active Members';
+            } else if (tab === 'previous') {
+                emails = dashRosterData.previous;
+                label = 'Previous Members';
+            } else if (tab === 'prospective') {
+                emails = dashRosterData.prospective;
+                label = 'Prospective Members (Mailing List)';
+            }
+            document.getElementById('dashRosterTabLabel').textContent = label;
+            document.getElementById('dashRosterCount').textContent = emails.length + ' email' + (emails.length !== 1 ? 's' : '');
+            document.getElementById('dashboardEmailList').textContent = emails.join('; ');
         }
 
         async function refreshEmailRoster() {
@@ -4806,6 +4828,42 @@
                 closeSpeechModal();
             }
         };
+    
+        async function submitMailingList() {
+            const firstName = document.getElementById('mlFirstName').value.trim();
+            const lastName = document.getElementById('mlLastName').value.trim();
+            const email = document.getElementById('mlEmail').value.trim();
+            const phone = document.getElementById('mlPhone').value.trim();
+            const name = firstName + ' ' + lastName;
+
+            if (!firstName || !lastName || !email) {
+                alert('Please enter your first name, last name, and email address.');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/attendance/index', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mailing_list: true,
+                        guest_name: name,
+                        guest_email: email,
+                        guest_phone: phone || null
+                    })
+                });
+                const data = await res.json();
+                if (data.error && data.error !== 'Already checked in') {
+                    alert(data.error);
+                    return;
+                }
+                document.getElementById('mailingListForm').style.display = 'none';
+                document.getElementById('mailingListSuccess').style.display = 'block';
+            } catch (e) {
+                alert('Error joining mailing list. Please try again.');
+                console.error(e);
+            }
+        }
     </script>
 </body>
 </html>
