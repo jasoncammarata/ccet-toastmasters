@@ -36,6 +36,16 @@ app.all('/api/meetings/roles', convertHandler(require('./api/meetings/roles')));
 app.all('/api/meetings/speeches', convertHandler(require('./api/meetings/speeches')));
 app.all('/api/meetings/evaluators', convertHandler(require('./api/meetings/evaluators')));
 
+app.get('/api/members/active-names', (req, res) => {
+  try {
+    const db = require('./lib/db');
+    const members = db.prepare("SELECT id, name FROM members WHERE is_active = 1 AND email != 'CCET_Admin' ORDER BY name").all();
+    res.json(members);
+  } catch(e) {
+    res.status(500).json({ error: 'Failed to load members' });
+  }
+});
+
 app.all('/api/members/index', convertHandler(require('./api/members/index')));
 app.all('/api/members/:id', convertHandler(require('./api/members/[id]')));
 app.all('/api/applications/index', convertHandler(require('./api/applications/index')));
@@ -46,6 +56,7 @@ app.all('/api/member-dashboard/index', convertHandler(require('./api/member-dash
 app.all('/api/attendance/index', convertHandler(require('./api/attendance/index')));
 app.all('/api/attendance/table-topics', convertHandler(require('./api/attendance/table-topics')));
 app.all('/api/attendance/qrcode', convertHandler(require('./api/attendance/qrcode')));
+
 app.all('/api/voting/index', convertHandler(require('./api/voting/index')));
 
 app.get('/checkin', (req, res) => {

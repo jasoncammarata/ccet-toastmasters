@@ -233,8 +233,10 @@
                 html += '<select class="rank-select" data-category="' + category + '" data-rank="' + r.rank + '">';
                 html += '<option value="">-- Select --</option>';
                 for (const n of nomineeList) {
-                    const val = n.member_id ? 'm_' + n.member_id : 'g_' + n.guest_id;
-                    html += '<option value="' + val + '">' + n.name + '</option>';
+                    const val = n.member_id ? 'm_' + n.member_id : n.guest_id ? 'g_' + n.guest_id : 'n_' + encodeURIComponent(n.guest_name);
+                    var label = n.name;
+                if (n.topic_summary) label += ' — ' + n.topic_summary;
+                html += '<option value="' + val + '">' + label + '</option>';
                 }
                 html += '</select>';
                 html += '</div>';
@@ -308,10 +310,12 @@
                 categorySelections[category].push(value);
 
                 const isGuest = value.startsWith('g_');
+                const isName = value.startsWith('n_');
                 rankings.push({
                     category: category,
-                    nominee_member_id: isGuest ? null : parseInt(value.split('_')[1]),
+                    nominee_member_id: (!isGuest && !isName) ? parseInt(value.split('_')[1]) : null,
                     nominee_guest_id: isGuest ? parseInt(value.split('_')[1]) : null,
+                    nominee_guest_name: isName ? decodeURIComponent(value.substring(2)) : null,
                     rank: rank
                 });
             }

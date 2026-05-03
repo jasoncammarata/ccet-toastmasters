@@ -1421,9 +1421,28 @@
                         <h3 style="color: #e65100; margin: 0;">🎤 Table Topics Speaker Tracker</h3>
                         <button onclick="closeTTTracker()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #999;">✕</button>
                     </div>
-                    <p style="color: #666; margin-bottom: 1rem;">Check the box next to each person who participated in Table Topics.</p>
+                    <div style="background: #fff8e1; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                        <p style="color: #e65100; font-weight: 600; margin-bottom: 0.75rem;">Add a Table Topics Speaker:</p>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem;">
+                            <div>
+                                <label style="font-size: 0.85rem; color: #666; display: block; margin-bottom: 0.25rem;">Member:</label>
+                                <select id="ttMemberSelect" onchange="ttMemberChanged()" style="width: 100%; padding: 8px 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 0.95rem;">
+                                    <option value="">-- Select a member --</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 0.85rem; color: #666; display: block; margin-bottom: 0.25rem;">Or enter guest name:</label>
+                                <input type="text" id="ttGuestName" placeholder="Guest name" style="width: 100%; padding: 8px 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 0.95rem;" onchange="ttGuestChanged()">
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 0.75rem;">
+                            <label style="font-size: 0.85rem; color: #666; display: block; margin-bottom: 0.25rem;">Topic Summary:</label>
+                            <input type="text" id="ttTopicSummary" placeholder="Brief summary of the topic" style="width: 100%; padding: 8px 12px; border: 2px solid #ddd; border-radius: 6px; font-size: 0.95rem;">
+                        </div>
+                        <button onclick="addTTSpeaker()" class="btn-primary" style="width: auto; padding: 8px 20px; background: #ff9800;">➕ Add Speaker</button>
+                    </div>
                     <div id="ttTrackerList">
-                        <p style="color: #999;">Loading attendance...</p>
+                        <p style="color: #999;">No Table Topics speakers yet.</p>
                     </div>
                 </div>
             </div>
@@ -2190,69 +2209,113 @@
             const listEl = document.getElementById('ttTrackerList');
             listEl.innerHTML = '<p style="color: #999;">Loading...</p>';
 
+            // Populate member dropdown using public endpoint
+            const memberSelect = document.getElementById("ttMemberSelect");
             try {
-                const headers = {};
-                if (apiClient.token) headers['Authorization'] = `Bearer ${apiClient.token}`;
+                const mRes = await fetch("/api/members/active-names");
+                if (mRes.ok) {
+                    const activeMembers = await mRes.json();
+                    memberSelect.innerHTML = '<option value="">-- Select a member --</option>' +
+                        activeMembers.map(function(m) { return '<option value="' + m.id + '">' + m.name + '</option>'; }).join("");
+                }
+            } catch (e) {
+                console.error("Failed to load members for TT:", e);
+            }
 
-                const res = await fetch(`/api/attendance/index?meeting_id=${selectedMeetingId}`, { headers });
+            // Load existing TT speakers
+            try {
+                const res = await fetch('/api/attendance/table-topics?meeting_id=' + selectedMeetingId);
                 const data = await res.json();
-                const attendance = data.attendance || [];
-                const isLocked = data.isLocked;
+                const speakers = data.speakers || [];
 
-                if (attendance.length === 0) {
-                    listEl.innerHTML = '<p style="color: #999;">No attendees checked in yet.</p>';
+                if (speakers.length === 0) {
+                    listEl.innerHTML = '<p style="color: #999;">No Table Topics speakers yet.</p>';
                     return;
                 }
 
-                const isAdmin = currentUser && currentUser.isAdmin;
-
-                listEl.innerHTML = attendance.map(a => `
-                    <div style="display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee;">
-                        <input type="checkbox" 
-                            style="width: 20px; height: 20px; margin-right: 10px; cursor: pointer;"
-                            ${a.is_table_topics_speaker ? 'checked' : ''}
-                            ${isLocked && !isAdmin ? 'disabled' : ''}
-                            onchange="toggleTTSpeaker(${a.member_id || 'null'}, ${a.guest_id || 'null'}, this)"
-                        >
-                        <span style="font-size: 1.05rem;">${a.name}</span>
-                        <span style="margin-left: 0.5rem; font-size: 0.75rem; padding: 2px 8px; border-radius: 12px; background: ${a.type === 'member' ? '#e3f2fd' : '#e8f5e9'}; color: ${a.type === 'member' ? '#1976d2' : '#2e7d32'};">${a.type}</span>
-                    </div>
-                `).join('');
-
-                if (isLocked && !isAdmin) {
-                    listEl.innerHTML = '<div style="padding: 0.75rem; background: #fff3cd; border-radius: 8px; color: #856404; margin-bottom: 1rem;">🔒 Table Topics tracking is locked for this meeting.</div>' + listEl.innerHTML;
-                }
+                listEl.innerHTML = '<div style="font-weight: 600; color: #e65100; margin-bottom: 0.5rem;">Speakers:</div>' +
+                    speakers.map(function(s) {
+                        return '<div style="display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; gap: 0.75rem;">' +
+                            '<span style="font-size: 1.05rem; font-weight: 500; min-width: 150px;">' + s.name + '</span>' +
+                            '<span style="font-size: 0.95rem; color: #666; flex: 1; font-style: italic;">' + (s.topic_summary || '') + '</span>' +
+                            '<button onclick="removeTTSpeaker(' + s.id + ')" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 1.1rem;" title="Remove">\u2715</button>' +
+                            '</div>';
+                    }).join('');
             } catch (e) {
                 console.error('TT Tracker load error:', e);
-                listEl.innerHTML = '<p style="color: red;">Failed to load attendance.</p>';
+                listEl.innerHTML = '<p style="color: red;">Failed to load speakers.</p>';
             }
         }
 
-        async function toggleTTSpeaker(memberId, guestId, checkbox) {
+        function ttMemberChanged() {
+            if (document.getElementById('ttMemberSelect').value) {
+                document.getElementById('ttGuestName').value = '';
+                document.getElementById('ttGuestName').disabled = true;
+            } else {
+                document.getElementById('ttGuestName').disabled = false;
+            }
+        }
+
+        function ttGuestChanged() {
+            if (document.getElementById('ttGuestName').value.trim()) {
+                document.getElementById('ttMemberSelect').value = '';
+                document.getElementById('ttMemberSelect').disabled = true;
+            } else {
+                document.getElementById('ttMemberSelect').disabled = false;
+            }
+        }
+
+        async function addTTSpeaker() {
+            const memberId = document.getElementById('ttMemberSelect').value;
+            const guestName = document.getElementById('ttGuestName').value.trim();
+            const topicSummary = document.getElementById('ttTopicSummary').value.trim();
+
+            if (!memberId && !guestName) {
+                alert('Please select a member or enter a guest name.');
+                return;
+            }
+
             try {
-                const headers = { 'Content-Type': 'application/json' };
-                if (apiClient.token) headers['Authorization'] = `Bearer ${apiClient.token}`;
+                const body = { meeting_id: parseInt(selectedMeetingId), topic_summary: topicSummary };
+                if (memberId) body.member_id = parseInt(memberId);
+                else body.guest_name = guestName;
 
-                const body = { meeting_id: parseInt(selectedMeetingId) };
-                if (memberId) body.member_id = memberId;
-                if (guestId) body.guest_id = guestId;
-
-                const res = await fetch('/api/attendance/table-topics', {
+                const res = await fetch('/api/attendance/table-topics?meeting_id=' + selectedMeetingId, {
                     method: 'POST',
-                    headers,
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(body)
                 });
                 const data = await res.json();
                 if (!res.ok) {
-                    checkbox.checked = !checkbox.checked;
-                    alert(data.error || 'Failed to update');
+                    alert(data.error || 'Failed to add speaker');
+                    return;
                 }
+                document.getElementById('ttMemberSelect').value = '';
+                document.getElementById('ttGuestName').value = '';
+                document.getElementById('ttGuestName').disabled = false;
+                document.getElementById('ttMemberSelect').disabled = false;
+                document.getElementById('ttTopicSummary').value = '';
+                await loadTTTracker();
             } catch (e) {
-                checkbox.checked = !checkbox.checked;
-                alert('Failed to update: ' + e.message);
+                alert('Error adding speaker: ' + e.message);
             }
         }
-        
+
+        async function removeTTSpeaker(speakerId) {
+            try {
+                const res = await fetch('/api/attendance/table-topics?meeting_id=' + selectedMeetingId, {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ speaker_id: speakerId })
+                });
+                if (res.ok) {
+                    await loadTTTracker();
+                }
+            } catch (e) {
+                alert('Error removing speaker: ' + e.message);
+            }
+        }
+
         async function loadGuestList(meetingId) {
             try {
                 const headers = {};
@@ -2829,8 +2892,8 @@
                 actionButton = `<button class="signup-button" disabled title="Member login required">Sign Up</button>`;
             }
 
-            // Add TT Tracker button on Timer row when Timer is assigned
-            const ttTrackerButton = (roleId === 'timer' && assignmentName) 
+            // Add TT Tracker button on Table Topics Master row
+            const ttTrackerButton = (roleId === 'topics') 
                 ? `<button style="margin-left: 1rem; background: #ff9800; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;" onclick="openTTTracker()">🎤 TT Tracker</button>` 
                 : '';
 

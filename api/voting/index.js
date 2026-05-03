@@ -47,12 +47,13 @@ module.exports = async (req, res) => {
         WHERE e.meeting_id = ? AND e.member_id IS NOT NULL
       `).all(meetingId);
 
-      // Table Topics speakers - from table_topics_speakers table (can be members or guests)
+      // Table Topics speakers - from table_topics_speakers table (can be members, guests, or guest_name)
       const tableTopics = db.prepare(`
-        SELECT tt.member_id, tt.guest_id,
+        SELECT tt.member_id, tt.guest_id, tt.guest_name, tt.topic_summary,
           CASE
             WHEN tt.member_id IS NOT NULL THEN m.name
             WHEN tt.guest_id IS NOT NULL THEN g.name
+            WHEN tt.guest_name IS NOT NULL THEN tt.guest_name
           END as name
         FROM table_topics_speakers tt
         LEFT JOIN members m ON tt.member_id = m.id
@@ -71,18 +72,20 @@ module.exports = async (req, res) => {
             SELECT
               nominee_member_id,
               nominee_guest_id,
+              nominee_guest_name,
               SUM(CASE WHEN rank = 1 THEN 3 WHEN rank = 2 THEN 2 WHEN rank = 3 THEN 1 ELSE 0 END) as total_points,
               SUM(CASE WHEN rank = 1 THEN 1 ELSE 0 END) as first_place_votes,
               SUM(CASE WHEN rank = 2 THEN 1 ELSE 0 END) as second_place_votes,
               CASE
                 WHEN nominee_member_id IS NOT NULL THEN m.name
                 WHEN nominee_guest_id IS NOT NULL THEN g.name
+                WHEN nominee_guest_name IS NOT NULL THEN nominee_guest_name
               END as name
             FROM votes v
             LEFT JOIN members m ON v.nominee_member_id = m.id
             LEFT JOIN guests g ON v.nominee_guest_id = g.id
             WHERE v.meeting_id = ? AND v.category = ?
-            GROUP BY nominee_member_id, nominee_guest_id
+            GROUP BY nominee_member_id, nominee_guest_id, nominee_guest_name
             ORDER BY total_points DESC, first_place_votes DESC, second_place_votes DESC
           `).all(meetingId, category);
 
@@ -182,8 +185,8 @@ module.exports = async (req, res) => {
 
         // Insert all rankings
         const insert = db.prepare(`
-          INSERT INTO votes (meeting_id, category, nominee_member_id, nominee_guest_id, rank, voter_token)
-          VALUES (?, ?, ?, ?, ?, ?)
+          INSERT INTO votes (meeting_id, category, nominee_member_id, nominee_guest_id, nominee_guest_name, rank, voter_token)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
         `);
 
         const insertMany = db.transaction((rankings) => {
@@ -193,6 +196,7 @@ module.exports = async (req, res) => {
               r.category,
               r.nominee_member_id || null,
               r.nominee_guest_id || null,
+              r.nominee_guest_name || null,
               r.rank,
               voter_token
             );
