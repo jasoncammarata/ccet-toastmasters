@@ -2604,196 +2604,213 @@
                 alert('Please select a meeting first.');
                 return;
             }
-            
             const meeting = meetings[selectedMeetingId];
-            // Fetch QR code and attendance for presentation
-            let qrDataUrl = '';
-            let attendanceList = [];
-            try {
-                const qrRes = await fetch(`/api/attendance/qrcode?meeting_id=${selectedMeetingId}`);
-                const qrData = await qrRes.json();
-                qrDataUrl = qrData.qrCode || '';
-            } catch (e) { console.error('QR fetch error:', e); }
-            try {
-                const token = apiClient.token;
-                const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-                const attRes = await fetch(`/api/attendance/index?meeting_id=${selectedMeetingId}`, { headers });
-                const attData = await attRes.json();
-                attendanceList = attData.attendance || [];
-            } catch (e) { console.error('Attendance fetch error:', e); }            
-
-            // Helper to extract role name
             const getRoleName = (role) => {
                 if (!role) return 'Available';
                 return typeof role === 'object' ? (role.name || 'Available') : role;
             };
-            
-            // Get word of the day
             const ahCounterRole = meeting.roles['ah-counter-grammarian'] || meeting.roles['ah-counter/grammarian'];
             const wordOfTheDay = ahCounterRole && typeof ahCounterRole === 'object' ? ahCounterRole.wordOfTheDay : null;
-            
-            // Generate presentation HTML
+
+            // Fetch TT speakers
+            let ttSpeakersHTML = '<div style="color: #999; padding: 0.5rem;">No Table Topics speakers yet.</div>';
+            try {
+                const ttRes = await fetch('/api/attendance/table-topics?meeting_id=' + selectedMeetingId);
+                const ttData = await ttRes.json();
+                const speakers = ttData.speakers || [];
+                if (speakers.length > 0) {
+                    ttSpeakersHTML = speakers.map(function(s) {
+                        return '<div style="display: flex; align-items: center; padding: 8px 10px; border-bottom: 1px solid #eee; gap: 0.75rem;">' +
+                            '<span style="font-weight: 500; min-width: 140px; font-size: 1.1rem;">' + s.name + '</span>' +
+                            '<span style="color: #666; font-style: italic; flex: 1; font-size: 1rem;">' + (s.topic_summary || '') + '</span>' +
+                            '<button onclick="presRemoveTT(' + s.id + ')" style="background: none; border: none; color: #d32f2f; cursor: pointer; font-size: 1rem;">\u2715</button>' +
+                            '</div>';
+                    }).join('');
+                }
+            } catch(e) { console.error('TT fetch error:', e); }
+
+            // Fetch active members for TT dropdown
+            let memberOptionsHTML = '<option value="">-- Select member --</option>';
+            try {
+                const mRes = await fetch('/api/members/active-names');
+                if (mRes.ok) {
+                    const members = await mRes.json();
+                    memberOptionsHTML += members.map(function(m) { return '<option value="' + m.id + '">' + m.name + '</option>'; }).join('');
+                }
+            } catch(e) {}
+
+            // Check voting status
+            let votingStatus = 'closed';
+            let voteCount = 0;
+            let attendanceCount = 0;
+            let votingResultsHTML = '';
+            try {
+                const vRes = await fetch('/api/voting/index?meeting_id=' + selectedMeetingId);
+                const vData = await vRes.json();
+                votingStatus = vData.status || 'closed';
+                voteCount = vData.voteCount || 0;
+                attendanceCount = vData.attendanceCount || 0;
+                if (vData.results) {
+                    const cats = [{key:'speaker',label:'Best Speaker'},{key:'evaluator',label:'Best Evaluator'},{key:'table_topics',label:'Best Table Topics'}];
+                    const icons = {gold:'\uD83E\uDD47',silver:'\uD83E\uDD48',bronze:'\uD83E\uDD49'};
+                    votingResultsHTML = '<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1rem;">';
+                    cats.forEach(function(cat) {
+                        var entries = vData.results[cat.key] || [];
+                        votingResultsHTML += '<div style="background: #f5f5f5; border-radius: 8px; padding: 1rem;"><div style="font-weight: bold; color: #1976d2; text-align: center; margin-bottom: 0.5rem; font-size: 1.1rem;">' + cat.label + '</div>';
+                        if (entries.length > 0) {
+                            entries.forEach(function(e) {
+                                votingResultsHTML += '<div style="padding: 4px 8px;">' + icons[e.medal] + ' ' + e.name + ' <span style="color: #999;">(' + e.total_points + ' pts)</span></div>';
+                            });
+                        } else {
+                            votingResultsHTML += '<div style="color: #999; text-align: center;">No votes</div>';
+                        }
+                        votingResultsHTML += '</div>';
+                    });
+                    votingResultsHTML += '</div>';
+                }
+            } catch(e) {}
+
+            // Vote QR code
+            const voteUrl = window.location.origin + '/vote?meeting_id=' + selectedMeetingId;
+            const voteQrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(voteUrl);
+
             const presentationHTML = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Meeting Agenda - Presentation Mode</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            background: #ffffff;
-            color: #333;
-            padding: 2rem;
-            line-height: 1.6;
-        }
-        .header {
-            text-align: center;
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 3px solid #1976d2;
-        }
-        .leadership-row {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 1rem;
-            margin-bottom: 2rem;
-            padding: 1.5rem;
-            background: #f5f5f5;
-            border-radius: 8px;
-        }
-        .role-item {
-            text-align: center;
-        }
-        .role-title {
-            font-weight: bold;
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
-            color: #1976d2;
-        }
-        .role-name {
-            font-size: 1.5rem;
-        }
-        .speeches-section {
-            margin-top: 2rem;
-        }
-        .speech-row {
-            display: grid;
-            grid-template-columns: 2fr 3fr 2fr;
-            gap: 1.5rem;
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            background: #f9f9f9;
-            border-radius: 8px;
-            border-left: 4px solid #1976d2;
-        }
-        .speech-column {
-            font-size: 1.5rem;
-        }
-        .column-label {
-            font-weight: bold;
-            color: #666;
-            font-size: 1.25rem;
-            margin-bottom: 0.3rem;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #333; padding: 1.5rem 2rem; line-height: 1.5; font-size: 1.1rem; min-height: 100vh; }
+        .header { text-align: center; font-size: 2.8rem; font-weight: bold; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 3px solid rgba(255,255,255,0.4); color: white; }
+        .main-layout { display: grid; grid-template-columns: 3fr 2fr; gap: 2rem; }
+        .left-content { }
+        .right-sidebar { display: flex; flex-direction: column; gap: 1rem; }
+        .leadership-row { margin-bottom: 1.25rem; padding: 1.25rem; background: #f5f5f5; border-radius: 8px; color: #333; } .leadership-top { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; } .leadership-bottom { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
+        .role-item { text-align: center; }
+        .role-title { font-weight: bold; font-size: 1.3rem; margin-bottom: 0.3rem; color: #1976d2; }
+        .role-name { font-size: 1.6rem; font-family: Georgia, serif; font-weight: bold; }
+        .speech-row { display: grid; grid-template-columns: 2fr 3fr 2fr; gap: 1rem; padding: 1.25rem; margin-bottom: 0.75rem; background: #f5f5f5; border-radius: 8px; border-left: 4px solid #1976d2; color: #333; }
+        .speech-column { font-size: 1.4rem; font-family: Georgia, serif; font-weight: bold; }
+        .column-label { font-weight: bold; color: #1976d2; font-size: 1.3rem; margin-bottom: 0.2rem; }
+        .sidebar-card { background: #f5f5f5; border-radius: 8px; padding: 1rem; border: 1px solid #e0e0e0; color: #333; }
+        .sidebar-title { font-weight: bold; color: #1976d2; font-size: 1.3rem; margin-bottom: 0.5rem; border-bottom: 2px solid #1976d2; padding-bottom: 0.3rem; }
+        .section-heading { font-size: 1.4rem; font-weight: bold; color: white; margin-bottom: 0.5rem; padding-left: 0.25rem; }
+        .btn { border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
+        .btn-orange { background: #ff9800; color: white; }
+        .btn-green { background: #4caf50; color: white; }
+        .btn-red { background: #f44336; color: white; }
+        .btn-blue { background: #1976d2; color: white; }
     </style>
 </head>
 <body>
     <div class="header">
         ${meeting.date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} | ${meeting.type === 'in-person' ? 'In-Person' : 'Virtual'}
     </div>
-   
-    <div class="leadership-row">
-        <div class="role-item">
-            <div class="role-title">Toastmaster</div>
-            <div class="role-name">${getRoleName(meeting.roles['toastmaster-of-the-evening'] || meeting.roles.toastmaster)}</div>
-        </div>
-        <div class="role-item">
-            <div class="role-title">General Evaluator</div>
-            <div class="role-name">${getRoleName(meeting.roles['general-evaluator'] || meeting.roles.evaluator)}</div>
-        </div>
-        <div class="role-item">
-            <div class="role-title">Ah-Counter/Grammarian</div>
-            <div class="role-name">${getRoleName(meeting.roles['ah-counter-grammarian'] || meeting.roles['ah-counter/grammarian'])}</div>
-        </div>
-        <div class="role-item">
-            <div class="role-title">Timer</a></div>
-            <div class="role-name">${getRoleName(meeting.roles.timer)}</div>
-        </div>
-        <div class="role-item">
-            <div class="role-title">Table Topics</div>
-            <div class="role-name">${getRoleName(meeting.roles['table-topics-master'] || meeting.roles.topics)}</div>
-        </div>
-    </div>
-
-    <div class="speeches-section">
-        ${generatePresentationSpeeches(meeting)}
-    </div>
-    
-    ${wordOfTheDay ? `
-    <div style="text-align: center; margin-top: 1.5rem; padding: 1rem; background: #fff3cd; border-radius: 8px; border: 2px solid #ffc107;">
-        <div style="font-size: 1.2rem; font-weight: bold; color: #856404; margin-bottom: 0.5rem;">
-            ⭐ Word of the Day ⭐
-        </div>
-        <div style="font-size: 1.5rem; font-weight: bold;">
-            <a href="https://www.google.com/search?q=define+${encodeURIComponent(wordOfTheDay)}" target="_blank" style="color: #1976d2; text-decoration: none;">
-                ${wordOfTheDay}
-            </a>
-        </div>
-    </div>
-    ` : ''}
-    <div style="display: flex; gap: 1.5rem; margin-top: 1.5rem;">
-        <div style="text-align: center; padding: 1rem; background: #e8f5e9; border-radius: 8px; border: 2px solid #4caf50; width: 220px; flex-shrink: 0;">
-            <div style="font-size: 1.2rem; font-weight: bold; color: #2e7d32; margin-bottom: 0.5rem;">📋 Check In</div>
-            ${qrDataUrl ? `<img src="${qrDataUrl}" alt="Check-in QR Code" style="width: 180px;">` : '<p>QR unavailable</p>'}
-            <div style="font-size: 0.85rem; color: #666; margin-top: 0.3rem;">Scan to check in</div>
-        </div>
-        <div style="flex: 1; padding: 1rem; background: #f5f5f5; border-radius: 8px;">
-            <div style="font-size: 1.3rem; font-weight: bold; color: #1976d2; margin-bottom: 0.75rem;">📋 Attendance</div>
-            <div style="display: flex; gap: 1rem;">
-                <div style="flex: 1;">
-                    <div style="font-weight: bold; font-size: 1rem; margin-bottom: 0.5rem; color: #333; border-bottom: 2px solid #1976d2; padding-bottom: 0.25rem;">Members</div>
-                    ${attendanceList.filter(a => a.type === 'member').filter((a, i, arr) => i < Math.ceil(arr.length / 4)).map(a => `<div style="font-size: 1rem; padding: 0.2rem 0;">${a.name}</div>`).join('') || '<div style="color: #999;">—</div>'}
+    <div class="main-layout">
+        <div class="left-content">
+            <div class="section-heading">Roles</div>
+            <div class="leadership-row">
+                <div class="leadership-top">
+                    <div class="role-item"><div class="role-title">Toastmaster of the Evening</div><div class="role-name">${getRoleName(meeting.roles['toastmaster-of-the-evening'] || meeting.roles.toastmaster)}</div></div>
+                    <div class="role-item"><div class="role-title">General Evaluator</div><div class="role-name">${getRoleName(meeting.roles['general-evaluator'] || meeting.roles.evaluator)}</div></div>
                 </div>
-                <div style="flex: 1;">
-                    <div style="font-weight: bold; font-size: 1rem; margin-bottom: 0.5rem; color: #333; border-bottom: 2px solid #1976d2; padding-bottom: 0.25rem;">&nbsp;</div>
-                    ${attendanceList.filter(a => a.type === 'member').filter((a, i, arr) => i >= Math.ceil(arr.length / 4) && i < Math.ceil(arr.length / 2)).map(a => `<div style="font-size: 1rem; padding: 0.2rem 0;">${a.name}</div>`).join('') || ''}
+                <div class="leadership-bottom">
+                    <div class="role-item"><div class="role-title">Ah-Counter/Grammarian</div><div class="role-name">${getRoleName(meeting.roles['ah-counter-grammarian'] || meeting.roles['ah-counter/grammarian'])}</div></div>
+                    <div class="role-item"><div class="role-title">Timer</div><div class="role-name">${getRoleName(meeting.roles.timer)}</div></div>
+                    <div class="role-item"><div class="role-title">Table Topics Master</div><div class="role-name">${getRoleName(meeting.roles['table-topics-master'] || meeting.roles.topics)}</div></div>
                 </div>
-                <div style="flex: 1;">
-                    <div style="font-weight: bold; font-size: 1rem; margin-bottom: 0.5rem; color: #333; border-bottom: 2px solid #1976d2; padding-bottom: 0.25rem;">&nbsp;</div>
-                    ${attendanceList.filter(a => a.type === 'member').filter((a, i, arr) => i >= Math.ceil(arr.length / 2) && i < Math.ceil(arr.length * 3 / 4)).map(a => `<div style="font-size: 1rem; padding: 0.2rem 0;">${a.name}</div>`).join('') || ''}
+            </div>
+            <div class="section-heading" style="margin-top: 0.75rem;">Speeches</div>
+            <div class="speeches-section">
+                ${generatePresentationSpeeches(meeting)}
+            </div>
+            ${wordOfTheDay ? '<div style="text-align: center; margin-top: 1rem; padding: 0.75rem; background: #fff3cd; border-radius: 8px; border: 2px solid #ffc107;"><span style="font-weight: bold; color: #856404;">\u2B50 Word of the Day: </span><a href="https://www.google.com/search?q=define+' + encodeURIComponent(wordOfTheDay) + '" target="_blank" style="color: #1976d2; font-weight: bold; font-size: 1.2rem; text-decoration: none;">' + wordOfTheDay + '</a></div>' : ''}
+        </div>
+        <div class="right-sidebar">
+            <!-- TT Tracker -->
+            <div class="sidebar-card">
+                <div class="sidebar-title">\uD83C\uDFA4 Table Topics Speakers</div>
+                <div id="presTTList">${ttSpeakersHTML}</div>
+                <div style="margin-top: 0.5rem; border-top: 1px solid #e0e0e0; padding-top: 0.5rem;">
+                    <select id="presTTMember" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; margin-bottom: 0.5rem;">
+                        ${memberOptionsHTML}
+                    </select>
+                    <input type="text" id="presTTGuest" placeholder="Or guest name" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; margin-bottom: 0.5rem;">
+                    <input type="text" id="presTTTopic" placeholder="Topic summary" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; margin-bottom: 0.5rem;">
+                    <button onclick="presAddTT()" class="btn btn-orange" style="width: 100%;">\u2795 Add Speaker</button>
                 </div>
-                <div style="flex: 1;">
-                    <div style="font-weight: bold; font-size: 1rem; margin-bottom: 0.5rem; color: #333; border-bottom: 2px solid #1976d2; padding-bottom: 0.25rem;">&nbsp;</div>
-                    ${attendanceList.filter(a => a.type === 'member').filter((a, i, arr) => i >= Math.ceil(arr.length * 3 / 4)).map(a => `<div style="font-size: 1rem; padding: 0.2rem 0;">${a.name}</div>`).join('') || ''}
+            </div>
+            <!-- Voting -->
+            <div class="sidebar-card">
+                <div class="sidebar-title">\uD83D\uDDF3\uFE0F Voting</div>
+                <div id="presVotingArea">
+                    ${votingStatus === 'open' ? 
+                        '<div style="text-align: center;"><p style="color: #4caf50; font-weight: bold; margin-bottom: 0.5rem; font-size: 1.3rem;">Voting is Open</p><p style="font-size: 1.2rem; color: #666;">' + voteCount + ' votes cast</p><img src="' + voteQrUrl + '" alt="Vote QR" style="width: 200px; margin: 0.75rem 0;"><p style="font-size: 1rem; color: #666;">Scan to vote or visit<br><strong>www.ccet-toastmasters.org</strong></p><button onclick="presCloseVoting()" class="btn btn-red" style="width: 100%; margin-top: 0.75rem; padding: 12px; font-size: 1.1rem;">\uD83D\uDD12 Close Voting</button></div>'
+                    : votingResultsHTML ?
+                        '<div style="text-align: center;"><p style="color: #e65100; font-weight: bold; font-size: 1.3rem; margin-bottom: 0.5rem;">\uD83C\uDFC6 Results</p></div>' + votingResultsHTML + '<div style="margin-top: 0.75rem;"><button onclick="presOpenVoting()" class="btn btn-green" style="width: 100%; padding: 12px; font-size: 1.1rem;">\uD83D\uDDF3\uFE0F Reopen Voting</button></div>'
+                    :
+                        '<div style="display: flex; flex-direction: column; gap: 0.75rem;"><button onclick="presOpenVoting()" class="btn btn-green" style="width: 100%; padding: 12px; font-size: 1.1rem;">\uD83D\uDDF3\uFE0F Open Voting</button><button disabled class="btn" style="width: 100%; padding: 12px; font-size: 1.1rem; background: #ccc; color: #999;">\uD83D\uDD12 Close Voting</button><button disabled class="btn" style="width: 100%; padding: 12px; font-size: 1.1rem; background: #ccc; color: #999;">\uD83C\uDFC6 Display Results</button></div>'
+                    }
                 </div>
-                <div style="flex: 1;">
-                    <div style="font-weight: bold; font-size: 1rem; margin-bottom: 0.5rem; color: #2e7d32; border-bottom: 2px solid #4caf50; padding-bottom: 0.25rem;">Guests</div>
-                    ${attendanceList.filter(a => a.type === 'guest').map(a => `<div style="font-size: 1rem; padding: 0.2rem 0;">${a.name}</div>`).join('') || '<div style="color: #999;">—</div>'}
-                </div>
+            </div>
+            <!-- Refresh -->
+            <div style="text-align: center;">
+                <button onclick="if(window.opener && !window.opener.closed) { window.opener.openPresentationMode(); window.close(); } else { alert('Please refresh from the main page.'); }" class="btn btn-blue" style="width: 100%;">\uD83D\uDD04 Refresh</button>
             </div>
         </div>
     </div>
-    <div style="text-align: center; margin-top: 1.5rem; padding: 1rem;">
-        <button onclick="if(window.opener && !window.opener.closed) { window.opener.openPresentationMode(); window.close(); } else { alert('Please refresh from the main page.'); }" style="background: #1976d2; color: white; border: none; padding: 10px 24px; border-radius: 6px; cursor: pointer; font-size: 1rem;">🔄 Refresh</button>
-    </div>
+    <script>
+        function presAddTT() {
+            var memberId = document.getElementById('presTTMember').value;
+            var guestName = document.getElementById('presTTGuest').value.trim();
+            var topic = document.getElementById('presTTTopic').value.trim();
+            if (!memberId && !guestName) { alert('Select a member or enter a guest name.'); return; }
+            var body = { meeting_id: ${selectedMeetingId}, topic_summary: topic };
+            if (memberId) body.member_id = parseInt(memberId);
+            else body.guest_name = guestName;
+            fetch('/api/attendance/table-topics?meeting_id=${selectedMeetingId}', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+            }).then(function() {
+                if (window.opener && !window.opener.closed) { window.opener.openPresentationMode(); window.close(); }
+            }).catch(function(e) { alert('Error: ' + e.message); });
+        }
+        function presRemoveTT(id) {
+            fetch('/api/attendance/table-topics?meeting_id=${selectedMeetingId}', {
+                method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ speaker_id: id })
+            }).then(function() {
+                if (window.opener && !window.opener.closed) { window.opener.openPresentationMode(); window.close(); }
+            }).catch(function(e) { alert('Error: ' + e.message); });
+        }
+        function presOpenVoting() {
+            fetch('/api/voting/index', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'open', meeting_id: ${selectedMeetingId} })
+            }).then(function() {
+                if (window.opener && !window.opener.closed) { window.opener.openPresentationMode(); window.close(); }
+            }).catch(function(e) { alert('Error: ' + e.message); });
+        }
+        function presCloseVoting() {
+            if (!confirm('Are you sure you want to close voting?')) return;
+            fetch('/api/voting/index', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'close', meeting_id: ${selectedMeetingId} })
+            }).then(function() {
+                if (window.opener && !window.opener.closed) { window.opener.openPresentationMode(); window.close(); }
+            }).catch(function(e) { alert('Error: ' + e.message); });
+        }
+        function presShowResults() {
+            if (window.opener && !window.opener.closed) { window.opener.openPresentationMode(); window.close(); }
+        }
+    ${"<"+"/script>"}
 </body>
 </html>
             `;
-            // Open in new window or reuse existing
             var presentationWindow = window.presentationWindow && !window.presentationWindow.closed ? window.presentationWindow : window.open("", "_blank", "width=1920,height=1080");
             window.presentationWindow = presentationWindow;
             presentationWindow.document.write(presentationHTML);
             presentationWindow.document.close();
-            // Auto-refresh every 10 seconds
             if (window.presentationRefreshTimer) clearInterval(window.presentationRefreshTimer);
             window.presentationRefreshTimer = setInterval(() => {
                 if (window.presentationWindow && !window.presentationWindow.closed) {
@@ -2803,7 +2820,7 @@
                 }
             }, 10000);
         }
-        
+
         async function refreshPresentationContent() {
             if (!selectedMeetingId || !meetings[selectedMeetingId]) return;
             if (!window.presentationWindow || window.presentationWindow.closed) return;
