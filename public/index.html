@@ -1174,7 +1174,7 @@
 
                 <div class="role-card">
                     <h3>📊 Meeting Analytics</h3>
-                    <p>View meeting attendance, role assignments, and participation statistics.</p>
+                    <p>View role assignments and participation statistics.</p>
                     <div style="margin-top: 1rem;">
                         <button onclick="alert('Feature coming soon!')" class="btn-primary" style="width: auto; padding: 8px 16px;">
                             View Analytics
@@ -2109,7 +2109,6 @@
             const agendaDisplay = document.getElementById('agendaDisplay');
             if (agendaDisplay) {
                 agendaDisplay.innerHTML = generateAgendaHTML(meeting);
-                await loadGuestList(selectedMeetingId);
                 await loadTTSpeakersList(selectedMeetingId);
                 checkVotingStatus();
             }
@@ -2316,60 +2315,6 @@
             }
         }
 
-        async function loadGuestList(meetingId) {
-            try {
-                const headers = {};
-                if (apiClient.token) headers['Authorization'] = `Bearer ${apiClient.token}`;
-
-                const res = await fetch(`/api/attendance/index?meeting_id=${meetingId}`, { headers });
-                const data = await res.json();
-                const attendance = data.attendance || [];
-                const guests = attendance.filter(a => a.type === 'guest');
-
-                if (guests.length === 0) return;
-
-                const isAdmin = currentUser && currentUser.isAdmin;
-
-                let guestHTML = `
-                    <div class="agenda-line section-header" style="margin-top: 1.5rem;">
-                        <span>👋 Guests (${guests.length})</span>
-                    </div>
-                `;
-
-                guests.forEach(g => {
-                    let guestInfo = `<span class="assignment-name">${g.name}</span>`;
-                    if (isAdmin && g.email) {
-                        guestInfo += `<span style="margin-left: 1rem; color: #666; font-size: 0.9rem;">${g.email}</span>`;
-                    }
-                    if (isAdmin && g.phone) {
-                        guestInfo += `<span style="margin-left: 1rem; color: #666; font-size: 0.9rem;">${g.phone}</span>`;
-                    }
-                    guestHTML += `
-                        <div class="agenda-line">
-                            <span class="agenda-role">${guestInfo}</span>
-                        </div>
-                    `;
-                });
-
-                if (isAdmin && guests.some(g => g.email)) {
-                    const emails = guests.filter(g => g.email).map(g => g.email).join(', ');
-                    guestHTML += `
-                        <div style="margin-top: 0.75rem; text-align: right;">
-                            <button onclick="copyGuestEmails('${emails.replace(/'/g, "\\'")}')" style="background: #1976d2; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">📋 Copy Guest Emails</button>
-                        </div>
-                    `;
-                }
-
-                // Append to agenda display
-                const agendaDisplay = document.getElementById('agendaDisplay');
-                if (agendaDisplay) {
-                    agendaDisplay.innerHTML += guestHTML;
-                }
-            } catch (e) {
-                console.error('Load guest list error:', e);
-            }
-        }
-
         function copyGuestEmails(emails) {
             navigator.clipboard.writeText(emails).then(() => {
                 alert('Guest emails copied to clipboard!');
@@ -2401,11 +2346,9 @@
 
         async function copyTTSpeakerNames() {
             try {
-                const headers = {};
-                if (apiClient.token) headers['Authorization'] = `Bearer ${apiClient.token}`;
-                const res = await fetch(`/api/attendance/index?meeting_id=${selectedMeetingId}`, { headers });
+                const res = await fetch('/api/attendance/table-topics?meeting_id=' + selectedMeetingId);
                 const data = await res.json();
-                const names = (data.attendance || []).filter(a => a.is_table_topics_speaker).map(a => a.name);
+                const names = (data.speakers || []).map(s => s.name);
                 copyNamesToClipboard(names, 'TT Speaker');
             } catch (e) {
                 alert('Failed to load TT speakers.');
@@ -2580,18 +2523,16 @@
             const listEl = document.getElementById('ttSpeakersList');
             if (!listEl) return;
             try {
-                const headers = {};
-                if (apiClient.token) headers['Authorization'] = `Bearer ${apiClient.token}`;
-                const res = await fetch(`/api/attendance/index?meeting_id=${meetingId}`, { headers });
+                const res = await fetch('/api/attendance/table-topics?meeting_id=' + meetingId);
                 const data = await res.json();
-                const ttSpeakers = (data.attendance || []).filter(a => a.is_table_topics_speaker);
+                const ttSpeakers = (data.speakers || []);
                 if (ttSpeakers.length === 0) {
                     listEl.innerHTML = '<div class="agenda-line"><span class="agenda-role" style="color: #999;">No TT speakers recorded yet.</span></div>';
                     return;
                 }
                 listEl.innerHTML = ttSpeakers.map(a => `
                     <div class="agenda-line">
-                        <span class="agenda-role"><span class="assignment-name">${a.name}</span> <span style="font-size: 0.8rem; color: #666;">(${a.type})</span></span>
+                        <span class="agenda-role"><span class="assignment-name">${a.name}</span>${a.topic_summary ? ` <span style="font-size: 0.85rem; color: #666; font-style: italic;">— ${a.topic_summary}</span>` : ''}</span>
                     </div>
                 `).join('');
             } catch (e) {
@@ -2650,14 +2591,12 @@
             // Check voting status
             let votingStatus = 'closed';
             let voteCount = 0;
-            let attendanceCount = 0;
             let votingResultsHTML = '';
             try {
                 const vRes = await fetch('/api/voting/index?meeting_id=' + selectedMeetingId);
                 const vData = await vRes.json();
                 votingStatus = vData.status || 'closed';
                 voteCount = vData.voteCount || 0;
-                attendanceCount = vData.attendanceCount || 0;
                 if (vData.results) {
                     const cats = [{key:'speaker',label:'Best Speaker'},{key:'evaluator',label:'Best Evaluator'},{key:'table_topics',label:'Best Table Topics'}];
                     const icons = {gold:'\uD83E\uDD47',silver:'\uD83E\uDD48',bronze:'\uD83E\uDD49'};
@@ -4374,38 +4313,6 @@
                 alert('Failed to remove role assignment.');
             }
         }
-
-        // Check if today is a meeting day and show check-in
-        async function checkMeetingDayCheckin() {
-            try {
-                const response = await fetch('/api/meetings/index');
-                const meetings = await response.json();
-                const now = new Date();
-                const today = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
-                const todayMeeting = meetings.find(m => m.date === today);
-                
-                if (todayMeeting) {
-                    // Fetch QR code
-                    const qrRes = await fetch(`/api/attendance/qrcode?meeting_id=${todayMeeting.id}`);
-                    const qrData = await qrRes.json();
-                    
-                    const checkinDiv = document.getElementById('meetingDayCheckin');
-                    const dateEl = document.getElementById('checkinMeetingDate');
-                    const qrEl = document.getElementById('checkinQRCode');
-                    const btnEl = document.getElementById('checkinButton');
-                    
-                    const meetingDate = new Date(todayMeeting.date + 'T00:00:00');
-                    dateEl.textContent = meetingDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-                    
-                    qrEl.innerHTML = `<img src="${qrData.qrCode}" alt="Check-in QR Code" style="max-width: 250px;">`;
-                    btnEl.onclick = () => window.open(qrData.checkinUrl, '_blank');
-                    
-                    checkinDiv.style.display = 'block';
-                }
-            } catch (e) {
-                console.error('Meeting day check-in error:', e);
-            }
-        }
         async function checkMeetingDayVoting() {
             try {
                 const response = await fetch("/api/meetings/index");
@@ -4450,7 +4357,6 @@
             // Show home section by default
             showSection('home');
             // Check if today is a meeting day
-            await checkMeetingDayCheckin();
             await checkMeetingDayVoting();
         });
         // ===== Speech Log Feature =====
