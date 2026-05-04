@@ -24,8 +24,7 @@ module.exports = async (req, res) => {
       const meetingEnd = new Date(meeting.date + 'T23:59:59');
       const isLocked = estNow > meetingEnd;
 
-      // Get attendance count
-      const attendanceCount = db.prepare('SELECT COUNT(*) as count FROM attendance WHERE meeting_id = ?').get(meetingId).count;
+      // Vote count only (attendance removed)
 
       // Get vote count (unique voter tokens)
       const voteCount = db.prepare('SELECT COUNT(DISTINCT voter_token) as count FROM votes WHERE meeting_id = ?').get(meetingId).count;
@@ -99,7 +98,7 @@ module.exports = async (req, res) => {
       res.json({
         status: session ? session.status : 'closed',
         isLocked,
-        attendanceCount,
+
         voteCount,
         nominees: {
           speaker: speakers,

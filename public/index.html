@@ -2552,7 +2552,7 @@
                 } else if (data.status === "open") {
                     document.getElementById("openVotingBtn").style.display = "none";
                     document.getElementById("closeVotingBtn").style.display = "inline-block";
-                    document.getElementById("votingStatusText").textContent = "Voting is open - " + data.voteCount + " of " + data.attendanceCount + " have voted";
+                    document.getElementById("votingStatusText").textContent = "Voting is open - " + data.voteCount + " votes cast";
                     document.getElementById("showResultsBtn").style.display = "none";
                 } else if (!isMeetingDay) {
                     document.getElementById("openVotingBtn").style.display = "none";
@@ -2614,11 +2614,18 @@
 
             // Fetch TT speakers
             let ttSpeakersHTML = '<div style="color: #999; padding: 0.5rem;">No Table Topics speakers yet.</div>';
+            let ttDisplayHTML = '';
+
             try {
                 const ttRes = await fetch('/api/attendance/table-topics?meeting_id=' + selectedMeetingId);
                 const ttData = await ttRes.json();
                 const speakers = ttData.speakers || [];
                 if (speakers.length > 0) {
+                    ttDisplayHTML = '<div class="section-heading" style="margin-top: 0.75rem; color: white;">Table Topics Speakers</div>' +
+                        '<div style="background: #f5f5f5; border-radius: 8px; padding: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem;">' +
+                        speakers.map(function(s, idx) {
+                            return '<div style="font-family: Georgia, serif; font-weight: bold; font-size: 1.1rem; padding: 0.3rem 0;"><span style="color: #1976d2; margin-right: 0.3rem;">' + (idx + 1) + '.</span>' + s.name + (s.topic_summary ? ' <span style="font-weight: normal; color: #666; font-style: italic;">\u2014 ' + s.topic_summary + '</span>' : '') + '</div>';
+                        }).join('') + '</div>';
                     ttSpeakersHTML = speakers.map(function(s) {
                         return '<div style="display: flex; align-items: center; padding: 8px 10px; border-bottom: 1px solid #eee; gap: 0.75rem;">' +
                             '<span style="font-weight: 500; min-width: 140px; font-size: 1.1rem;">' + s.name + '</span>' +
@@ -2627,7 +2634,8 @@
                             '</div>';
                     }).join('');
                 }
-            } catch(e) { console.error('TT fetch error:', e); }
+
+            } catch(e) { console.error('TT fetch error:', e); window.ttSpeakersForDisplay = []; }
 
             // Fetch active members for TT dropdown
             let memberOptionsHTML = '<option value="">-- Select member --</option>';
@@ -2690,7 +2698,7 @@
         .leadership-row { margin-bottom: 1.25rem; padding: 1.25rem; background: #f5f5f5; border-radius: 8px; color: #333; } .leadership-top { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; } .leadership-bottom { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem; }
         .role-item { text-align: center; }
         .role-title { font-weight: bold; font-size: 1.3rem; margin-bottom: 0.3rem; color: #1976d2; }
-        .role-name { font-size: 1.6rem; font-family: Georgia, serif; font-weight: bold; }
+        .role-name { font-size: 1.4rem; font-family: Georgia, serif; font-weight: bold; }
         .speech-row { display: grid; grid-template-columns: 2fr 3fr 2fr; gap: 1rem; padding: 1.25rem; margin-bottom: 0.75rem; background: #f5f5f5; border-radius: 8px; border-left: 4px solid #1976d2; color: #333; }
         .speech-column { font-size: 1.4rem; font-family: Georgia, serif; font-weight: bold; }
         .column-label { font-weight: bold; color: #1976d2; font-size: 1.3rem; margin-bottom: 0.2rem; }
@@ -2705,8 +2713,9 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        ${meeting.date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} | ${meeting.type === 'in-person' ? 'In-Person' : 'Virtual'}
+    <div class="header" style="display: flex; align-items: center; justify-content: space-between;">
+        <div>${meeting.date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} | ${meeting.type === 'in-person' ? 'In-Person' : 'Virtual'}</div>
+        ${wordOfTheDay ? '<div style="font-size: 1.3rem; padding: 0.4rem 1rem; background: #fff3cd; border-radius: 8px; border: 2px solid #ffc107; white-space: nowrap;"><span style="font-weight: bold; color: #856404;">Word of the Day: </span><a href="https://www.google.com/search?q=define+' + encodeURIComponent(wordOfTheDay) + '" target="_blank" style="color: #1976d2; font-weight: bold; text-decoration: none;">' + wordOfTheDay + '</a></div>' : ''}
     </div>
     <div class="main-layout">
         <div class="left-content">
@@ -2726,13 +2735,13 @@
             <div class="speeches-section">
                 ${generatePresentationSpeeches(meeting)}
             </div>
-            ${wordOfTheDay ? '<div style="text-align: center; margin-top: 1rem; padding: 0.75rem; background: #fff3cd; border-radius: 8px; border: 2px solid #ffc107;"><span style="font-weight: bold; color: #856404;">\u2B50 Word of the Day: </span><a href="https://www.google.com/search?q=define+' + encodeURIComponent(wordOfTheDay) + '" target="_blank" style="color: #1976d2; font-weight: bold; font-size: 1.2rem; text-decoration: none;">' + wordOfTheDay + '</a></div>' : ''}
+            ${ttDisplayHTML}
         </div>
         <div class="right-sidebar">
             <!-- TT Tracker -->
             <div class="sidebar-card">
                 <div class="sidebar-title">\uD83C\uDFA4 Table Topics Speakers</div>
-                <div id="presTTList">${ttSpeakersHTML}</div>
+                
                 <div style="margin-top: 0.5rem; border-top: 1px solid #e0e0e0; padding-top: 0.5rem;">
                     <select id="presTTMember" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; margin-bottom: 0.5rem;">
                         ${memberOptionsHTML}
@@ -2818,7 +2827,7 @@
                 } else {
                     clearInterval(window.presentationRefreshTimer);
                 }
-            }, 10000);
+            }, 1000);
         }
 
         async function refreshPresentationContent() {

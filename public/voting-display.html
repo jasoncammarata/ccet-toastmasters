@@ -165,9 +165,8 @@
         <!-- Voting Open View -->
         <div id="open-view">
             <div class="vote-counter">
-                <span class="count-num" id="count-voted">0</span> of
-                <span class="count-num" id="count-total">0</span>
-                <div style="font-size:1.3rem; margin-top:0.25rem;">attendees have voted</div>
+                <span class="count-num" id="count-voted">0</span>
+                <div style="font-size:1.3rem; margin-top:0.25rem;">votes cast</div>
             </div>
             <div class="qr-section">
                 <img id="qr-image" src="" alt="Scan to vote" style="display:none;" />
@@ -266,7 +265,7 @@
                     statusBar.textContent = 'Voting is Open';
 
                     document.getElementById('count-voted').textContent = data.voteCount;
-                    document.getElementById('count-total').textContent = data.attendanceCount;
+                    // attendanceCount removed
 
                     if (!qrGenerated) {
                         const voteUrl = window.location.origin + '/vote?meeting_id=' + meetingId;

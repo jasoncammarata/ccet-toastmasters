@@ -272,7 +272,7 @@
 
                 nominees = data.nominees;
                 document.getElementById('vote-counter').textContent =
-                    data.voteCount + ' of ' + data.attendanceCount + ' attendees have voted';
+                    data.voteCount + ' votes cast';
 
                 buildRankDropdowns('speaker-section', 'speaker', nominees.speaker);
                 buildRankDropdowns('evaluator-section', 'evaluator', nominees.evaluator);
