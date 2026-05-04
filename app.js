@@ -36,6 +36,42 @@ app.all('/api/meetings/roles', convertHandler(require('./api/meetings/roles')));
 app.all('/api/meetings/speeches', convertHandler(require('./api/meetings/speeches')));
 app.all('/api/meetings/evaluators', convertHandler(require('./api/meetings/evaluators')));
 
+app.post('/api/meetings/word-of-the-day', (req, res) => {
+  try {
+    const db = require('./lib/db');
+    const { meetingId, wordOfTheDay } = req.body;
+    if (!meetingId || !wordOfTheDay) return res.status(400).json({ error: 'meetingId and wordOfTheDay required' });
+    const existing = db.prepare('SELECT id FROM ah_counter_grammarians WHERE meeting_id = ?').get(meetingId);
+    if (existing) {
+      db.prepare('UPDATE ah_counter_grammarians SET word_of_the_day = ? WHERE meeting_id = ?').run(wordOfTheDay, meetingId);
+    } else {
+      db.prepare('INSERT INTO ah_counter_grammarians (meeting_id, word_of_the_day) VALUES (?, ?)').run(meetingId, wordOfTheDay);
+    }
+    res.json({ success: true });
+  } catch(e) {
+    console.error('Word of day error:', e);
+    res.status(500).json({ error: 'Failed to save word of the day' });
+  }
+});
+
+app.post('/api/meetings/word-of-the-day', (req, res) => {
+  try {
+    const db = require('./lib/db');
+    const { meetingId, wordOfTheDay } = req.body;
+    if (!meetingId || !wordOfTheDay) return res.status(400).json({ error: 'meetingId and wordOfTheDay required' });
+    const existing = db.prepare('SELECT id FROM ah_counter_grammarians WHERE meeting_id = ?').get(meetingId);
+    if (existing) {
+      db.prepare('UPDATE ah_counter_grammarians SET word_of_the_day = ? WHERE meeting_id = ?').run(wordOfTheDay, meetingId);
+    } else {
+      db.prepare('INSERT INTO ah_counter_grammarians (meeting_id, word_of_the_day) VALUES (?, ?)').run(meetingId, wordOfTheDay);
+    }
+    res.json({ success: true });
+  } catch(e) {
+    console.error('Word of day error:', e);
+    res.status(500).json({ error: 'Failed to save word of the day' });
+  }
+});
+
 app.get('/api/members/active-names', (req, res) => {
   try {
     const db = require('./lib/db');

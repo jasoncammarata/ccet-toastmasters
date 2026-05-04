@@ -2654,7 +2654,7 @@
 <body>
     <div class="header" style="display: flex; align-items: center; justify-content: space-between;">
         <div>${meeting.date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })} | ${meeting.type === 'in-person' ? 'In-Person' : 'Virtual'}</div>
-        ${wordOfTheDay ? '<div style="font-size: 1.3rem; padding: 0.4rem 1rem; background: #fff3cd; border-radius: 8px; border: 2px solid #ffc107; white-space: nowrap;"><span style="font-weight: bold; color: #856404;">Word of the Day: </span><a href="https://www.google.com/search?q=define+' + encodeURIComponent(wordOfTheDay) + '" target="_blank" style="color: #1976d2; font-weight: bold; text-decoration: none;">' + wordOfTheDay + '</a></div>' : ''}
+        ${wordOfTheDay ? '<div style="font-size: 1.3rem; padding: 0.4rem 1rem; background: #fff3cd; border-radius: 8px; border: 2px solid #ffc107; white-space: nowrap;"><span style="font-weight: bold; color: #856404;">Word of the Day: </span><a href="https://www.google.com/search?q=define+' + encodeURIComponent(wordOfTheDay) + '" target="_blank" style="color: #1976d2; font-weight: bold; text-decoration: none;">' + wordOfTheDay + '</a></div>' : '<div style="font-size: 1.1rem; padding: 0.4rem 0.75rem; background: #fff3cd; border-radius: 8px; border: 2px solid #ffc107; white-space: nowrap; display: flex; align-items: center; gap: 0.5rem;"><span style="font-weight: bold; color: #856404;">Word of the Day:</span><input type="text" id="presWodInput" placeholder="Enter word" style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; width: 140px;"><button onclick="presSaveWod()" style="background: #4caf50; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;">Save</button></div>'}
     </div>
     <div class="main-layout">
         <div class="left-content">
@@ -2748,6 +2748,46 @@
                 if (window.opener && !window.opener.closed) { window.opener.openPresentationMode(); window.close(); }
             }).catch(function(e) { alert('Error: ' + e.message); });
         }
+        function presSaveWod() {
+            var word = document.getElementById('presWodInput').value.trim();
+            if (!word) { alert('Please enter a word.'); return; }
+            fetch('/api/meetings/word-of-the-day', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ meetingId: ${selectedMeetingId}, wordOfTheDay: word })
+            }).then(function(r) { return r.json(); }).then(function(d) {
+                if (d.success) {
+                    // Force page to show the saved word immediately
+                    document.getElementById('presWodInput').replaceWith(Object.assign(document.createElement('a'), {
+                        href: 'https://www.google.com/search?q=define+' + encodeURIComponent(word),
+                        target: '_blank',
+                        style: 'color: #1976d2; font-weight: bold; font-size: 1.3rem; text-decoration: none;',
+                        textContent: word
+                    }));
+                    var saveBtn = document.querySelector('button[onclick="presSaveWod()"]');
+                    if (saveBtn) saveBtn.remove();
+                }
+            }).catch(function(e) { alert('Error: ' + e.message); });
+        }
+        function presSaveWod() {
+            var word = document.getElementById('presWodInput').value.trim();
+            if (!word) { alert('Please enter a word.'); return; }
+            fetch('/api/meetings/word-of-the-day', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ meetingId: ${selectedMeetingId}, wordOfTheDay: word })
+            }).then(function(r) { return r.json(); }).then(function(d) {
+                if (d.success) {
+                    // Force page to show the saved word immediately
+                    document.getElementById('presWodInput').replaceWith(Object.assign(document.createElement('a'), {
+                        href: 'https://www.google.com/search?q=define+' + encodeURIComponent(word),
+                        target: '_blank',
+                        style: 'color: #1976d2; font-weight: bold; font-size: 1.3rem; text-decoration: none;',
+                        textContent: word
+                    }));
+                    var saveBtn = document.querySelector('button[onclick="presSaveWod()"]');
+                    if (saveBtn) saveBtn.remove();
+                }
+            }).catch(function(e) { alert('Error: ' + e.message); });
+        }
         function presShowResults() {
             if (window.opener && !window.opener.closed) { window.opener.openPresentationMode(); window.close(); }
         }
@@ -2772,7 +2812,23 @@
         async function refreshPresentationContent() {
             if (!selectedMeetingId || !meetings[selectedMeetingId]) return;
             if (!window.presentationWindow || window.presentationWindow.closed) return;
-            await loadMeetingDetails(selectedMeetingId);
+            // Don't refresh if user is typing in an input field
+            try {
+                var activeEl = window.presentationWindow.document.activeElement;
+                if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'SELECT' || activeEl.tagName === 'TEXTAREA')) return;
+            } catch(e) {}
+            // Reload roles to pick up word of the day changes
+            try {
+                const rolesRes = await fetch('/api/meetings/roles?meetingId=' + selectedMeetingId);
+                const roles = rolesRes.ok ? await rolesRes.json() : [];
+                roles.forEach(role => {
+                    const roleType = role.role_name.toLowerCase().replace(/\s+/g, '-');
+                    meetings[selectedMeetingId].roles[roleType] = {
+                        name: role.member_name,
+                        wordOfTheDay: role.word_of_the_day
+                    };
+                });
+            } catch(e) {}
             openPresentationMode();
         }
         function generatePresentationSpeeches(meeting) {
