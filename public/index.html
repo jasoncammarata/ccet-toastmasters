@@ -2606,7 +2606,7 @@
                         votingResultsHTML += '<div style="background: #f5f5f5; border-radius: 8px; padding: 1rem;"><div style="font-weight: bold; color: #1976d2; text-align: center; margin-bottom: 0.5rem; font-size: 1.1rem;">' + cat.label + '</div>';
                         if (entries.length > 0) {
                             entries.forEach(function(e) {
-                                votingResultsHTML += '<div style="padding: 4px 8px;">' + icons[e.medal] + ' ' + e.name + ' <span style="color: #999;">(' + e.total_points + ' pts)</span></div>';
+                                votingResultsHTML += '<div style="padding: 4px 8px;">' + icons[e.medal] + ' ' + e.name + '</div>';
                             });
                         } else {
                             votingResultsHTML += '<div style="color: #999; text-align: center;">No votes</div>';
