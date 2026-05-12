@@ -2556,12 +2556,14 @@
             // Fetch TT speakers
             let ttSpeakersHTML = '<div style="color: #999; padding: 0.5rem;">No Table Topics speakers yet.</div>';
             let ttDisplayHTML = '';
+            let ttRemoveHTML = '<option value="">-- Select speaker to remove --</option>';
 
             try {
                 const ttRes = await fetch('/api/attendance/table-topics?meeting_id=' + selectedMeetingId);
                 const ttData = await ttRes.json();
                 const speakers = ttData.speakers || [];
                 if (speakers.length > 0) {
+                    ttRemoveHTML = '<option value="">-- Select speaker to remove --</option>' + speakers.map(function(s) { return '<option value="' + s.id + '">' + s.name + '</option>'; }).join('');
                     ttDisplayHTML = '<div class="section-heading" style="margin-top: 0.75rem; color: white;">Table Topics Speakers</div>' +
                         '<div style="background: #f5f5f5; border-radius: 8px; padding: 1rem; display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem;">' +
                         speakers.map(function(s, idx) {
@@ -2688,6 +2690,12 @@
                     <input type="text" id="presTTGuest" placeholder="Or guest name" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; margin-bottom: 0.5rem;">
                     <input type="text" id="presTTTopic" placeholder="Topic summary" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; margin-bottom: 0.5rem;">
                     <button onclick="presAddTT()" class="btn btn-orange" style="width: 100%;">\u2795 Add Speaker</button>
+                    <div style="margin-top: 0.75rem; border-top: 1px solid #e0e0e0; padding-top: 0.75rem;">
+                        <select id="presRemoveTTSelect" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; margin-bottom: 0.5rem;">
+                            ${ttRemoveHTML}
+                        </select>
+                        <button onclick="presRemoveTTSelected()" class="btn btn-red" style="width: 100%;">\u2715 Remove Speaker</button>
+                    </div>
                 </div>
             </div>
             <!-- Voting -->
@@ -2786,6 +2794,16 @@
                     var saveBtn = document.querySelector('button[onclick="presSaveWod()"]');
                     if (saveBtn) saveBtn.remove();
                 }
+            }).catch(function(e) { alert('Error: ' + e.message); });
+        }
+        function presRemoveTTSelected() {
+            var sel = document.getElementById('presRemoveTTSelect');
+            var id = sel.value;
+            if (!id) { alert('Please select a speaker to remove.'); return; }
+            fetch('/api/attendance/table-topics?meeting_id=${selectedMeetingId}', {
+                method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ speaker_id: parseInt(id) })
+            }).then(function() {
+                if (window.opener && !window.opener.closed) { window.opener.openPresentationMode(); window.close(); }
             }).catch(function(e) { alert('Error: ' + e.message); });
         }
         function presShowResults() {
