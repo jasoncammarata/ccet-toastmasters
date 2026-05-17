@@ -157,7 +157,7 @@ class ApiClient {
     }
 
     // Sign-up methods - Require auth
-    async signUpForRole(meetingId, roleType, wordOfTheDay = null) {
+    async signUpForRole(meetingId, roleType, memberId, wordOfTheDay = null) {
         const roleNames = {
             'toastmaster': 'Toastmaster of the Evening',
             'evaluator': 'General Evaluator',
@@ -165,34 +165,49 @@ class ApiClient {
             'timer': 'Timer',
             'topics': 'Table Topics Master'
         };
-        
+
         const body = {
             meetingId,
             roleName: roleNames[roleType] || roleType,
-            memberId: this.user.id
+            memberId
         };
-        
-        // Add word of the day if provided
+
         if (wordOfTheDay) {
             body.wordOfTheDay = wordOfTheDay;
         }
-        
-        return this.request('/meetings/roles', {
+
+        // Use raw fetch - no auth token needed for member sign-ups
+        const response = await fetch(`${this.baseUrl}/meetings/roles`, {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
         });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Sign-up failed');
+        }
+
+        return response.json();
     }
 
-    async signUpForSpeech(meetingId, slotNumber, title, project) {
-        return this.request('/meetings/speeches', {
+    async signUpForSpeech(meetingId, speakerId, title, project) {
+        // Use raw fetch - no auth token needed for member sign-ups
+        const response = await fetch(`${this.baseUrl}/meetings/speeches`, {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 meetingId,
-                speakerId: this.user.id,
+                speakerId,
                 speechTitle: title,
-                speechProject: project
+                speechProject: project || null
             })
         });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Sign-up failed');
+        }
+        return response.json();
     }
 
     async updateSpeech(meetingId, slotNumber, title, project) {
@@ -218,15 +233,22 @@ class ApiClient {
         });
     }
 
-    async signUpForEvaluator(meetingId, slotNumber) {
-        return this.request('/meetings/evaluators', {
+    async signUpForEvaluator(meetingId, slotNumber, evaluatorId) {
+        // Use raw fetch - no auth token needed for member sign-ups
+        const response = await fetch(`${this.baseUrl}/meetings/evaluators`, {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 meetingId,
                 slotNumber,
-                evaluatorId: this.user.id
+                evaluatorId
             })
         });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Sign-up failed');
+        }
+        return response.json();
     }
 
     // Admin assignment methods
@@ -239,10 +261,9 @@ class ApiClient {
             'topics': 'Table Topics Master'
         };
 
-        // Find member ID by name
         const members = await this.getMembers();
         const member = members.find(m => m.name === memberName);
-        
+
         if (!member) {
             throw new Error('Member not found');
         }
@@ -250,10 +271,10 @@ class ApiClient {
         const body = {
             meetingId,
             roleName: roleNames[roleType] || roleType,
-            memberId: member.id
+            memberId: member.id,
+            adminOverride: true
         };
 
-        // Add word of the day if provided
         if (wordOfTheDay) {
             body.wordOfTheDay = wordOfTheDay;
         }

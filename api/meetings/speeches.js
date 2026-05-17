@@ -1,107 +1,101 @@
 const db = require('../../lib/db');
-const { authMiddleware } = require('../../lib/auth');
+const { authMiddleware, verifyToken } = require('../../lib/auth');
 
 module.exports = async (req, res) => {
   if (req.method === 'GET') {
-    // Allow anyone to view speeches - no auth required
     const { meetingId } = req.query;
-
-    if (!meetingId) {
-      return res.status(400).json({ error: 'Meeting ID required' });
-    }
+    if (!meetingId) return res.status(400).json({ error: 'Meeting ID required' });
 
     try {
       const speeches = db.prepare(`
-        SELECT
-          s.id,
-          s.meeting_id,
-          s.speaker_id,
-          s.speech_title,
-          s.speech_project,
-          s.evaluator_id,
-          speaker.name as speaker_name,
-          evaluator.name as evaluator_name
+        SELECT s.id, s.meeting_id, s.speaker_id, s.speech_title, s.speech_project, s.evaluator_id,
+               speaker.name as speaker_name, evaluator.name as evaluator_name
         FROM speeches s
         LEFT JOIN members speaker ON s.speaker_id = speaker.id
         LEFT JOIN members evaluator ON s.evaluator_id = evaluator.id
         WHERE s.meeting_id = ?
         ORDER BY s.id
       `).all(meetingId);
-
       res.json(speeches);
     } catch (error) {
       console.error('Get speeches error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   }
-  else if (req.method === 'POST' || req.method === 'PUT' || req.method === 'DELETE') {
-    // Require auth for modifying speeches
-    authMiddleware(async (req, res) => {
-      if (req.method === 'POST') {
-        const { meetingId, speakerId, speechTitle, speechProject, slotNumber, name } = req.body;
+  else if (req.method === 'POST') {
+    const { meetingId, speakerId, speechTitle, speechProject, name, adminOverride } = req.body;
 
-        if (!meetingId || (!speakerId && !name) || !speechTitle) {
-          return res.status(400).json({ error: 'Meeting ID, speaker, and speech title required' });
+    if (!meetingId || (!speakerId && !name) || !speechTitle) {
+      return res.status(400).json({ error: 'Meeting ID, speaker, and speech title required' });
+    }
+
+    try {
+      // Admin override path - requires valid admin token
+      if (adminOverride === true) {
+        const token = req.headers.authorization?.replace('Bearer ', '');
+        if (!token) return res.status(401).json({ error: 'Admin override requires authentication' });
+        const adminUser = verifyToken(token);
+        if (!adminUser || adminUser.role !== 'admin') {
+          return res.status(401).json({ error: 'Admin privileges required for override' });
         }
 
-        try {
-          let actualSpeakerId = speakerId;
-
-          // If name is provided instead of speakerId (for admin edits)
-          if (!speakerId && name) {
-            const member = db.prepare('SELECT id FROM members WHERE name = ?').get(name);
-            if (member) {
-              actualSpeakerId = member.id;
-            } else {
-              // Create a temporary member entry for non-members
-              const result = db.prepare(`
-                INSERT INTO members (name, email, password, role)
-                VALUES (?, ?, ?, ?)
-              `).run(name, `${name.toLowerCase().replace(/\s+/g, '.')}@temp.com`, 'temp', 'guest');
-              actualSpeakerId = result.lastInsertRowid;
-            }
+        let actualSpeakerId = speakerId;
+        if (!speakerId && name) {
+          const member = db.prepare('SELECT id FROM members WHERE name = ?').get(name);
+          if (member) {
+            actualSpeakerId = member.id;
+          } else {
+            const result = db.prepare(`INSERT INTO members (name, email, password, role) VALUES (?, ?, ?, ?)`)
+              .run(name, `${name.toLowerCase().replace(/\s+/g, '.')}@temp.com`, 'temp', 'guest');
+            actualSpeakerId = result.lastInsertRowid;
           }
-
-          const result = db.prepare(`
-            INSERT INTO speeches (meeting_id, speaker_id, speech_title, speech_project)
-            VALUES (?, ?, ?, ?)
-          `).run(meetingId, actualSpeakerId, speechTitle, speechProject || null);
-
-          res.json({
-            id: result.lastInsertRowid,
-            meetingId,
-            speakerId: actualSpeakerId,
-            speechTitle,
-            speechProject
-          });
-        } catch (error) {
-          console.error('Create speech error:', error);
-          res.status(500).json({ error: 'Internal server error' });
         }
-      }
-      
-      else if (req.method === 'PUT') {
-        const { meetingId, slotNumber, speechTitle, speechProject } = req.body;
 
+        console.log(`[ADMIN OVERRIDE] Admin ${adminUser.email} (id=${adminUser.id}) added/modified speech for meeting ${meetingId}, speakerId=${actualSpeakerId}, title="${speechTitle}" at ${new Date().toISOString()}`);
+
+        const result = db.prepare(`INSERT INTO speeches (meeting_id, speaker_id, speech_title, speech_project) VALUES (?, ?, ?, ?)`)
+          .run(meetingId, actualSpeakerId, speechTitle, speechProject || null);
+        return res.json({ id: result.lastInsertRowid, meetingId, speakerId: actualSpeakerId, speechTitle, speechProject });
+      }
+
+      // Member sign-up path - first come, first served
+      if (!speakerId) {
+        return res.status(400).json({ error: 'Speaker ID required for sign-up' });
+      }
+
+      // Count current speeches for this meeting
+      const speechCount = db.prepare('SELECT COUNT(*) as c FROM speeches WHERE meeting_id = ?').get(meetingId).c;
+      if (speechCount >= 4) {
+        return res.status(409).json({ error: 'All speech slots are filled. Please contact an officer if you need to make a change.' });
+      }
+
+      // Check if this member is already signed up for a speech at this meeting
+      const alreadySignedUp = db.prepare('SELECT id FROM speeches WHERE meeting_id = ? AND speaker_id = ?').get(meetingId, speakerId);
+      if (alreadySignedUp) {
+        return res.status(409).json({ error: 'You are already signed up for a speech at this meeting.' });
+      }
+
+      const result = db.prepare(`INSERT INTO speeches (meeting_id, speaker_id, speech_title, speech_project) VALUES (?, ?, ?, ?)`)
+        .run(meetingId, speakerId, speechTitle, speechProject || null);
+      return res.json({ id: result.lastInsertRowid, meetingId, speakerId, speechTitle, speechProject });
+
+    } catch (error) {
+      console.error('Create speech error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+  else if (req.method === 'PUT' || req.method === 'DELETE') {
+    authMiddleware(async (req, res) => {
+      if (req.method === 'PUT') {
+        const { meetingId, slotNumber, speechTitle, speechProject } = req.body;
         if (!meetingId || slotNumber === undefined || !speechTitle) {
           return res.status(400).json({ error: 'Meeting ID, slot number, and speech title required' });
         }
-
         try {
-          // Get speeches for this meeting ordered by ID
-          const speeches = db.prepare(`
-            SELECT id FROM speeches
-            WHERE meeting_id = ?
-            ORDER BY id
-          `).all(meetingId);
-
+          const speeches = db.prepare(`SELECT id FROM speeches WHERE meeting_id = ? ORDER BY id`).all(meetingId);
           if (speeches[slotNumber]) {
-            db.prepare(`
-              UPDATE speeches
-              SET speech_title = ?, speech_project = ?
-              WHERE id = ?
-            `).run(speechTitle, speechProject || null, speeches[slotNumber].id);
-            
+            db.prepare(`UPDATE speeches SET speech_title = ?, speech_project = ? WHERE id = ?`)
+              .run(speechTitle, speechProject || null, speeches[slotNumber].id);
             res.json({ success: true });
           } else {
             res.status(404).json({ error: 'Speech not found' });
@@ -113,19 +107,11 @@ module.exports = async (req, res) => {
       }
       else if (req.method === 'DELETE') {
         const { meetingId, slotNumber } = req.body;
-
         if (!meetingId || slotNumber === undefined) {
           return res.status(400).json({ error: 'Meeting ID and slot number required' });
         }
-
         try {
-          // Get speeches for this meeting ordered by ID
-          const speeches = db.prepare(`
-            SELECT id FROM speeches 
-            WHERE meeting_id = ? 
-            ORDER BY id
-          `).all(meetingId);
-
+          const speeches = db.prepare(`SELECT id FROM speeches WHERE meeting_id = ? ORDER BY id`).all(meetingId);
           if (speeches[slotNumber]) {
             db.prepare('DELETE FROM speeches WHERE id = ?').run(speeches[slotNumber].id);
             res.json({ success: true });

@@ -1356,7 +1356,7 @@
             <div class="login-form">
                 <h2 id="loginTitle" style="text-align: center; margin-bottom: 1.5rem;">Member Login</h2>
                 <p id="loginDescription" style="text-align: center; margin-bottom: 1.5rem; color: #666; font-size: 0.9rem;">
-                    Login to access member features and sign up for roles.
+                    Officers and admins log in here.
                 </p>
                 <form onsubmit="handleLogin(event)">
                     <div class="form-group">
@@ -1449,10 +1449,9 @@
 
             <div id="visitorNote" class="role-card" style="display: none; margin-top: 2rem; background: #e3f2fd; border-left-color: #1976d2;">
                 <h3>👋 Visitors Welcome!</h3>
-                <p>Interested in joining? Visitors can attend any meeting to observe and participate in Table Topics. To sign up for roles and speeches, please become a member or contact us for a guest account.</p>
+                <p>Members, sign up for meeting roles and speeches directly from this page — just click the Sign Up button and use the dropdown menu to find your name. If you do not see your name, please contact a CCET Officer.</p>
                 <div style="margin-top: 1rem;">
-                    <button onclick="showSection('contact')" class="btn-primary" style="width: auto; padding: 8px 16px; margin-right: 10px;">Contact Us</button>
-                    <button onclick="showLogin()" class="btn-primary" style="width: auto; padding: 8px 16px; background: #4caf50;">Member Login</button>
+                    <button onclick="showSection('contact')" class="btn-primary" style="width: auto; padding: 8px 16px;">Contact Us</button>
                 </div>
             </div>
         </section>
@@ -1721,13 +1720,6 @@
                 return;
             }
 
-            // Check member access for certain sections
-            if (sectionId === 'roles' && !currentUser) {
-                alert('Member login required to access meeting roles.');
-                showLogin();
-                return;
-            }
-            
             // Hide all sections
             const sections = document.querySelectorAll('.content-section');
             sections.forEach(section => section.classList.remove('active'));
@@ -2928,7 +2920,8 @@
                     }
                 }
             } else if (!assignmentName) {
-                actionButton = `<button class="signup-button" disabled title="Member login required">Sign Up</button>`;
+                // No login required - anyone can sign up via the member-selection modal
+                actionButton = `<button class="signup-button" onclick="signUpForRole('${roleId}', '${role}')">Sign Up</button>`;
             }
 
             // Add TT Tracker button on Table Topics Master row
@@ -2975,7 +2968,8 @@
                     }
                 }
             } else if (!assignment) {
-                actionButton = `<button class="signup-button" disabled title="Member login required">Sign Up</button>`;
+                // No login required - anyone can sign up via the speech modal
+                actionButton = `<button class="signup-button" onclick="signUpForSpeech(${index})">Sign Up</button>`;
             }
             
             return `
@@ -3013,7 +3007,8 @@
                     }
                 }
             } else if (!assignment) {
-                actionButton = `<button class="signup-button" disabled title="Member login required">Sign Up</button>`;
+                // No login required - anyone can sign up via the evaluator modal
+                actionButton = `<button class="signup-button" onclick="signUpForEvaluator(${index})">Sign Up</button>`;
             }
             
             return `
@@ -3096,7 +3091,7 @@
                     alert('Successfully updated word of the day!');
                 } else {
                     // Sign up with word
-                    await apiClient.signUpForRole(selectedMeetingId, 'ah-counter-grammarian', word);
+                    await apiClient.signUpForRole(selectedMeetingId, 'ah-counter-grammarian', currentUser ? currentUser.id : null, word);
                     closeWordModal();
                     await initializeMeetings();
                     alert('Successfully signed up for Ah-Counter/Grammarian!');
@@ -3142,25 +3137,13 @@
 
         // Meeting Signup Functions
         function signUpForSpeech(slotIndex) {
-            if (!currentUser) {
-                alert('Please login to sign up for speeches.');
-                return;
-            }
-            
             const meeting = meetings[selectedMeetingId];
             if (meeting.speakers[slotIndex]) {
-                alert('This speech slot is already taken.');
+                alert('This speech slot is already taken. Please contact an officer if you need to make a change.');
                 return;
             }
-            
-            // If admin, show admin speech modal with dropdown
-            if (currentUser.isAdmin) {
-                showAdminSpeechModal(slotIndex);
-                return;
-            }
-            
-            // Regular member uses regular speech modal
-            showSpeechModal(slotIndex);
+            // Show the speaker-selection modal for everyone (admin or not)
+            showAdminSpeechModal(slotIndex);
         }
 
         function editSpeech(slotIndex) {
@@ -3188,75 +3171,33 @@
         }
 
         async function signUpForEvaluator(slotIndex) {
-            if (!currentUser) {
-                alert('Please login to sign up for evaluator roles.');
-                return;
-            }
-            
             const meeting = meetings[selectedMeetingId];
             if (meeting.evaluators[slotIndex]) {
-                alert('This evaluator slot is already taken.');
+                alert('This evaluator slot is already taken. Please contact an officer if you need to make a change.');
                 return;
             }
-            
-            // If admin, show modal with dropdown
-            if (currentUser.isAdmin) {
-                await showAdminModal({
-                    type: 'evaluator',
-                    index: slotIndex,
-                    currentAssignment: null
-                });
-                return;
-            }
-            
-            // Regular member signs up for themselves
-            try {
-                await apiClient.signUpForEvaluator(selectedMeetingId, slotIndex);
-                await initializeMeetings();
-                alert('Successfully signed up as evaluator!');
-            } catch (error) {
-                alert('Failed to sign up as evaluator. Please try again.');
-            }
+            // Show the member-selection modal for everyone
+            await showAdminModal({
+                type: 'evaluator',
+                index: slotIndex,
+                currentAssignment: null
+            });
         }
 
         async function signUpForRole(roleId, roleTitle) {
-            if (!currentUser) {
-                alert('Please login to sign up for roles.');
-                return;
-            }
-            
             const meeting = meetings[selectedMeetingId];
             if (meeting.roles[roleId]) {
-                alert('This role is already taken.');
+                alert('This role is already taken. Please contact an officer if you need to make a change.');
                 return;
             }
-            
-            // If admin, show modal with dropdown
-            if (currentUser.isAdmin) {
-                await showAdminModal({
-                    type: 'role',
-                    roleId: roleId,
-                    roleTitle: roleTitle,
-                    currentAssignment: null,
-                    currentWord: null
-                });
-                return;
-            }
-            
-            // Regular member signs up for themselves
-            // Show word modal for ah-counter/grammarian
-            if (roleId === 'ah-counter-grammarian') {
-                showWordModal();
-                return;
-            }
-            
-            try {
-                await apiClient.signUpForRole(selectedMeetingId, roleId);
-                await initializeMeetings();
-                alert(`Successfully signed up for ${roleTitle}!`);
-            } catch (error) {
-                alert('Failed to sign up for role. Please try again.');
-            }
+            // Show the member-selection modal for everyone
+            await showAdminModal({
+                type: 'role',
+                roleId: roleId,
+                roleTitle: roleTitle,
+                currentAssignment: null,
+                currentWord: null
+            });
         }
            
         async function removeRoleAssignment(roleId) {
@@ -3368,10 +3309,12 @@
             
             // Update modal title
             const titleElement = document.getElementById('adminModalTitle');
+            const isAdmin = currentUser && currentUser.isAdmin;
+            const verb = isAdmin ? 'Assign' : 'Sign Up for';
             if (context.type === 'role') {
-                titleElement.textContent = `Assign ${context.roleTitle}`;
+                titleElement.textContent = `${verb} ${context.roleTitle}`;
             } else if (context.type === 'evaluator') {
-                titleElement.textContent = `Assign Evaluator #${context.index + 1}`;
+                titleElement.textContent = `${verb} Evaluator #${context.index + 1}`;
             }
             
             // Show/hide word field for ah-counter-grammarian
@@ -3415,16 +3358,38 @@
                     const wordInput = document.getElementById('adminWordOfTheDay');
                     const wordOfTheDay = adminModalContext.roleId === 'ah-counter-grammarian' ? wordInput.value.trim() : null;
                     
-                    await apiClient.adminAssignRole(selectedMeetingId, adminModalContext.roleId, memberName, wordOfTheDay);
+                    // Branch: admins use override path (can overwrite); members use sign-up path (no overwrite)
+                    if (currentUser && currentUser.isAdmin) {
+                        await apiClient.adminAssignRole(selectedMeetingId, adminModalContext.roleId, memberName, wordOfTheDay);
+                    } else {
+                        const member = activeMembers.find(m => m.name === memberName);
+                        if (!member) {
+                            alert('Member not found. Please refresh and try again.');
+                            return;
+                        }
+                        await apiClient.signUpForRole(selectedMeetingId, adminModalContext.roleId, member.id, wordOfTheDay);
+                    }
                 } else if (adminModalContext.type === 'evaluator') {
-                    await apiClient.request('/meetings/evaluators', {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            meetingId: selectedMeetingId,
-                            slotNumber: adminModalContext.index,
-                            evaluatorName: memberName
-                        })
-                    });
+                    if (currentUser && currentUser.isAdmin) {
+                        // Admin path - override flag
+                        await apiClient.request('/meetings/evaluators', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                meetingId: selectedMeetingId,
+                                slotNumber: adminModalContext.index,
+                                evaluatorName: memberName,
+                                adminOverride: true
+                            })
+                        });
+                    } else {
+                        // Member sign-up path
+                        const member = activeMembers.find(m => m.name === memberName);
+                        if (!member) {
+                            alert('Member not found. Please refresh and try again.');
+                            return;
+                        }
+                        await apiClient.signUpForEvaluator(selectedMeetingId, adminModalContext.index, member.id);
+                    }
                 }
                 
                 closeAdminModal();
@@ -4368,7 +4333,7 @@
 
         async function signUpForRoleFromRolesPage(meetingId, roleId) {
             try {
-                await apiClient.signUpForRole(meetingId, roleId);
+                await apiClient.signUpForRole(meetingId, roleId, currentUser ? currentUser.id : null);
                 await initializeMeetings();
                 loadMeetingRoles();
                 alert('Successfully signed up for role!');
