@@ -35,6 +35,7 @@ app.all('/api/meetings/index', convertHandler(require('./api/meetings/index')));
 app.all('/api/meetings/roles', convertHandler(require('./api/meetings/roles')));
 app.all('/api/meetings/speeches', convertHandler(require('./api/meetings/speeches')));
 app.all('/api/meetings/evaluators', convertHandler(require('./api/meetings/evaluators')));
+app.all('/api/meetings/:id', convertHandler(require('./api/meetings/[id]')));
 
 app.post('/api/meetings/word-of-the-day', (req, res) => {
   try {

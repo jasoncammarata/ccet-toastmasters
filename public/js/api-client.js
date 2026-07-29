@@ -371,6 +371,13 @@ class ApiClient {
             body: JSON.stringify({ status })
         });
     }
+
+    async updateMeetingType(meetingId, meetingType) {
+        return this.request(`/meetings/${meetingId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ meeting_type: meetingType })
+        });
+    }
 }
 
 // Create and export a single instance
