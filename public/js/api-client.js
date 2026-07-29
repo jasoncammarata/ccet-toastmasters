@@ -103,12 +103,16 @@ class ApiClient {
                 const [year, month, day] = meeting.date.split('-');
                 const date = new Date(year, month - 1, day);
                 const isFirstTuesday = Math.ceil(date.getDate() / 7) === 1;
-
+                // Prefer database values; fall back to first-Tuesday rule if not set
+                const meetingType = meeting.meeting_type || (isFirstTuesday ? 'in-person' : 'virtual');
+                const defaultLocation = meetingType === 'in-person'
+                    ? 'Crystal City Community Center'
+                    : 'Zoom (link sent to members)';
                 return {
                     id: meeting.id,
                     date: meeting.date,
-                    type: isFirstTuesday ? 'in-person' : 'virtual',
-                    location: isFirstTuesday ? 'Crystal City Community Center' : 'Zoom (link sent to members)',
+                    type: meetingType,
+                    location: meeting.location_override || defaultLocation,
                     theme: meeting.theme || '',
                     roles: {}, // Will be populated separately
                     speeches: [], // Will be populated separately
