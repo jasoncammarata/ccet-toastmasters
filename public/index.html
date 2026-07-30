@@ -1945,6 +1945,7 @@
                 // Process each meeting - store basic info only (no details yet)
                 for (const meeting of meetingsData) {
                     meetings[meeting.id] = {
+                        id: meeting.id,
                         date: (() => {
                             const [year, month, day] = meeting.date.split('-');
                             return new Date(year, month - 1, day);
